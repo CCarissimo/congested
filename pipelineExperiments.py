@@ -17,8 +17,8 @@ def main():
     N_STATES = 1
     N_ACTIONS = 3
     NEIGHBOURS = 0
-    N_ITER = 10000
-    N_REPEATS = 100
+    N_ITER = 100
+    N_REPEATS = 2
     mask = np.zeros(N_AGENTS)
     mask[:] = 1
     GAMMA = 0
@@ -29,7 +29,7 @@ def main():
 
     # Parameters which will be Varied
     EPSILON = "Variable"
-    sizeEpsilon = 101
+    sizeEpsilon = 1
     epsilons = np.linspace(0, 0.15, sizeEpsilon)
 
     QINIT = "Variable"
@@ -59,6 +59,12 @@ def main():
                 T = np.mean(W[int(0.8 * N_ITER):N_ITER])
                 T_std = np.std(W[int(0.8 * N_ITER):N_ITER])
 
+                groups = [M[t]["groups"] for t in range(0, N_ITER)]
+                groups_mean = np.mean(groups)
+                groups_var = np.var(groups)
+                Qvar = [M[t]["Qvar"] for t in range(0, N_ITER)]
+                Qvar_mean = np.mean(Qvar)
+
                 M, Q = vecSOrun_states(N_AGENTS, N_STATES, N_ACTIONS, NEIGHBOURS, 1, 0, mask, GAMMA, ALPHA, Q,
                                        PAYOFF_TYPE, SELECT_TYPE)
                 oneShot = np.mean(M[0]["R"])
@@ -70,7 +76,10 @@ def main():
                     "T_std": T_std,
                     "Lyapunov": L,
                     "repetition": t,
-                    "oneShot": oneShot
+                    "oneShot": oneShot,
+                    "groups_mean": groups_mean,
+                    "groups_var": groups_var,
+                    "Qvar_mean": Qvar_mean,
                 }
 
                 results.append(row)
