@@ -1,6 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.lib.stride_tricks import sliding_window_view
+import scipy.stats
+import scipy.cluster
+from scipy.spatial.distance import pdist
+
+
+def count_groups(Q_values, dist):
+    y = scipy.cluster.hierarchy.average(Q_values)
+    z = scipy.cluster.hierarchy.fcluster(y, dist, criterion='distance')
+    groups = np.bincount(z)
+    return len(groups)
 
 
 def vecSOrun(N_AGENTS, N_ACTIONS, N_ITER, EPSILON, mask, GAMMA, ALPHA, QINIT, PAYOFF_TYPE, PAYOFF_NOISE):
@@ -245,8 +255,12 @@ def vecSOrun_states(N_AGENTS, N_STATES, N_ACTIONS, NEIGHBOURS, N_ITER, EPSILON, 
 
         ## SAVE PROGRESS DATA
         # M[t] = {"A": A, "R": R}
-        M[t] = {"A": A, "nA": np.bincount(A, minlength=3), "R": R, "T": T,
-                "Qmean": Qmean}
+        M[t] = {"nA": np.bincount(A, minlength=3),
+                "R": R,
+                "T": T,
+                "Qmean": Qmean,
+                "groups": count_groups(Q[ind, S, :], 0.1),
+                "Qvar": Q[ind, S, :].var(axis=0)}
 
     return M, Q
 
