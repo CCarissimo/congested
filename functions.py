@@ -356,10 +356,12 @@ def vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, GAMMA, 
 
         ## DETERMINE NEXT STATE
         if R.mean() > recommender_threshold:
-            if random_recommender:
+            if random_recommender == True:
                 S = np.random.randint(N_STATES, size=N_AGENTS)
-            else:
+            elif random_recommender == False:
                 S = recommender(Q, initial_guess=A)
+            elif random_recommender == None:
+                S = S
 
         if SELECT_TYPE == "EPSILON":
             ## DETERMINE ACTIONS
