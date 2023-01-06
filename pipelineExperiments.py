@@ -17,8 +17,8 @@ def main():
     N_STATES = 3
     N_ACTIONS = 3
     NEIGHBOURS = 0
-    N_ITER = 100  # 10000
-    N_REPEATS = 1  # 10
+    N_ITER = 10000
+    N_REPEATS = 10
     mask = np.zeros(N_AGENTS)
     mask[:] = 1
     GAMMA = 0
@@ -29,7 +29,7 @@ def main():
 
     # Parameters which will be Varied
     EPSILON = "Variable"
-    sizeEpsilon = 1  # 11
+    sizeEpsilon = 11
     epsilons = np.linspace(0, 0.15, sizeEpsilon)
     
     # recommender parameters
