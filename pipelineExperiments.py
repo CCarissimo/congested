@@ -5,7 +5,7 @@
 
 
 def main():
-    from functions import vecSOrun, plot_run, vecSOrun_states
+    from functions import vecSOrun, plot_run, vecSOrun_states, vecSOrun_recommender
     import numpy as np
     import tqdm
     import pickle
@@ -17,8 +17,8 @@ def main():
     N_STATES = 1
     N_ACTIONS = 3
     NEIGHBOURS = 0
-    N_ITER = 100
-    N_REPEATS = 2
+    N_ITER = 10000
+    N_REPEATS = 10
     mask = np.zeros(N_AGENTS)
     mask[:] = 1
     GAMMA = 0
@@ -29,18 +29,21 @@ def main():
 
     # Parameters which will be Varied
     EPSILON = "Variable"
-    sizeEpsilon = 1
+    sizeEpsilon = 11
     epsilons = np.linspace(0, 0.15, sizeEpsilon)
-
+    
+    # recommender parameters
+    recommender_threshold = -1.7
+    
     QINIT = "Variable"
-    sizeQinit = 5
+    sizeQinit = 2
     qinits = {
         "uniform": "UNIFORM",
         "nash": np.array([-2, -2, -2]),
         # "cdu": np.array([-2, -1.5, -1]),
-        "cud": np.array([-1.5, -2, -1]),
-        "ucd": np.array([-1, -2, -1.5]),
-        "udc": np.array([-1, -1.5, -2]),
+        # "cud": np.array([-1.5, -2, -1]),
+        # "ucd": np.array([-1, -2, -1.5]),
+        # "udc": np.array([-1, -1.5, -2]),
         # "dcu": np.array([-2, -1, -1.5]),
         # "duc": np.array([-1.5, -1, -2])
     }
@@ -51,38 +54,44 @@ def main():
 
     for i, e in enumerate(tqdm.tqdm(epsilons)):
         for norm, initTable in qinits.items():
-            for t in range(0, N_REPEATS):
-                M, Q = vecSOrun_states(N_AGENTS, N_STATES, N_ACTIONS, NEIGHBOURS, N_ITER, e, mask, GAMMA, ALPHA, initTable,
-                                       PAYOFF_TYPE, SELECT_TYPE)
-                W = [M[t]["R"].mean() for t in range(0, N_ITER)]
-                L = nolds.lyap_r(W)
-                T = np.mean(W[int(0.8 * N_ITER):N_ITER])
-                T_std = np.std(W[int(0.8 * N_ITER):N_ITER])
+            for random_recommender in [False, True]:
+                for t in range(0, N_REPEATS):
+                    M, Q = vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, mask, GAMMA, ALPHA, QINIT,
+                                                PAYOFF_TYPE, SELECT_TYPE, recommender_threshold, random_recommender)
+                    W = [M[t]["R"].mean() for t in range(0, N_ITER)]
+                    L = nolds.lyap_r(W)
+                    T = np.mean(W[int(0.8 * N_ITER):N_ITER])
+                    T_std = np.std(W[int(0.8 * N_ITER):N_ITER])
 
-                groups = [M[t]["groups"] for t in range(0, N_ITER)]
-                groups_mean = np.mean(groups)
-                groups_var = np.var(groups)
-                Qvar = [M[t]["Qvar"] for t in range(0, N_ITER)]
-                Qvar_mean = np.mean(Qvar)
+                    groups = [M[t]["groups"] for t in range(0, N_ITER)]
+                    groups_mean = np.mean(groups)
+                    groups_var = np.var(groups)
+                    Qvar = [M[t]["Qvar"] for t in range(0, N_ITER)]
+                    Qvar_mean = np.mean(Qvar)
 
-                M, Q = vecSOrun_states(N_AGENTS, N_STATES, N_ACTIONS, NEIGHBOURS, 1, 0, mask, GAMMA, ALPHA, Q,
-                                       PAYOFF_TYPE, SELECT_TYPE)
-                oneShot = np.mean(M[0]["R"])
+                    above_threshold = np.where(np.array(W) >= recommender_threshold)
+                    stabilization_score = above_threshold.mean()
 
-                row = {
-                    "epsilon": e,
-                    "norm": norm,
-                    "T_mean": T,
-                    "T_std": T_std,
-                    "Lyapunov": L,
-                    "repetition": t,
-                    "oneShot": oneShot,
-                    "groups_mean": groups_mean,
-                    "groups_var": groups_var,
-                    "Qvar_mean": Qvar_mean,
-                }
+                    # M, Q = vecSOrun_states(N_AGENTS, N_STATES, N_ACTIONS, NEIGHBOURS, 1, 0, mask, GAMMA, ALPHA, Q,
+                    #                        PAYOFF_TYPE, SELECT_TYPE)
+                    # oneShot = np.mean(M[0]["R"])
 
-                results.append(row)
+                    row = {
+                        "epsilon": e,
+                        "norm": norm,
+                        "T_mean": T,
+                        "T_std": T_std,
+                        "Lyapunov": L,
+                        "repetition": t,
+                        # "oneShot": oneShot,
+                        "groups_mean": groups_mean,
+                        "groups_var": groups_var,
+                        "Qvar_mean": Qvar_mean,
+                        "random_recommender": random_recommender,
+                        "stabilization_score": stabilization_score
+                    }
+
+                    results.append(row)
 
     df = pd.DataFrame(results)
 
