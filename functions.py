@@ -326,7 +326,7 @@ def recommender(Q, initial_guess, maximize=False):
     return S
 
 
-def vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, mask, GAMMA, ALPHA, QINIT,
+def vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, GAMMA, ALPHA, QINIT,
                          PAYOFF_TYPE, SELECT_TYPE, recommender_threshold, random_recommender):
     if type(QINIT) == np.ndarray:
         if QINIT.shape == (N_AGENTS, N_STATES, N_ACTIONS):
@@ -340,9 +340,9 @@ def vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, mask, G
         ALPHA = np.random.random_sample(size=N_AGENTS)
 
     if EPSILON == "UNIFORM":
-        EPSILON = np.random.random_sample(size=N_AGENTS) * mask
+        EPSILON = np.random.random_sample(size=N_AGENTS) 
     else:
-        EPSILON = EPSILON * np.ones(N_AGENTS) * mask
+        EPSILON = EPSILON * np.ones(N_AGENTS)
 
     M = {}
 

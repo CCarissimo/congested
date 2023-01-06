@@ -14,11 +14,11 @@ def main():
 
     # Base Settings Which Will Not Change
     N_AGENTS = 100
-    N_STATES = 1
+    N_STATES = 3
     N_ACTIONS = 3
     NEIGHBOURS = 0
-    N_ITER = 10000
-    N_REPEATS = 10
+    N_ITER = 100  # 10000
+    N_REPEATS = 1  # 10
     mask = np.zeros(N_AGENTS)
     mask[:] = 1
     GAMMA = 0
@@ -29,7 +29,7 @@ def main():
 
     # Parameters which will be Varied
     EPSILON = "Variable"
-    sizeEpsilon = 11
+    sizeEpsilon = 1  # 11
     epsilons = np.linspace(0, 0.15, sizeEpsilon)
     
     # recommender parameters
@@ -56,7 +56,7 @@ def main():
         for norm, initTable in qinits.items():
             for random_recommender in [False, True]:
                 for t in range(0, N_REPEATS):
-                    M, Q = vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, mask, GAMMA, ALPHA, QINIT,
+                    M, Q = vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, e, GAMMA, ALPHA, initTable,
                                                 PAYOFF_TYPE, SELECT_TYPE, recommender_threshold, random_recommender)
                     W = [M[t]["R"].mean() for t in range(0, N_ITER)]
                     L = nolds.lyap_r(W)
@@ -69,8 +69,9 @@ def main():
                     Qvar = [M[t]["Qvar"] for t in range(0, N_ITER)]
                     Qvar_mean = np.mean(Qvar)
 
-                    above_threshold = np.where(np.array(W) >= recommender_threshold)
-                    stabilization_score = above_threshold.mean()
+                    # above_threshold = np.where(np.array(W) >= recommender_threshold)
+                    # print(above_threshold)
+                    # stabilization_score = above_threshold.mean()
 
                     # M, Q = vecSOrun_states(N_AGENTS, N_STATES, N_ACTIONS, NEIGHBOURS, 1, 0, mask, GAMMA, ALPHA, Q,
                     #                        PAYOFF_TYPE, SELECT_TYPE)
@@ -88,7 +89,7 @@ def main():
                         "groups_var": groups_var,
                         "Qvar_mean": Qvar_mean,
                         "random_recommender": random_recommender,
-                        "stabilization_score": stabilization_score
+                        # "stabilization_score": stabilization_score
                     }
 
                     results.append(row)
