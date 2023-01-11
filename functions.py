@@ -314,12 +314,9 @@ def total_welfare(Q, S):
 from scipy.optimize import minimize
 
 
-def recommender(Q, initial_guess, maximize=False):
-    if not maximize:
-        fun = lambda x: total_updates(Q, x)
-    else:
-        fun = lambda x: -1 * total_updates(Q, x)
-
+def recommender(Q, initial_guess, objective, maximize=False):
+    coefficient = -1 if maximize else 0
+    fun = lambda x: coefficient * objective(Q, x)
     recommendation = minimize(fun, x0=initial_guess, bounds=[(0, 2) for i in range(len(initial_guess))],
                               method=None)
     S = np.rint(recommendation.x).astype(int)
@@ -327,14 +324,9 @@ def recommender(Q, initial_guess, maximize=False):
 
 
 def vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, GAMMA, ALPHA, QINIT,
-                         PAYOFF_TYPE, SELECT_TYPE, recommender_threshold, random_recommender):
-    if type(QINIT) == np.ndarray:
-        if QINIT.shape == (N_AGENTS, N_STATES, N_ACTIONS):
-            Q = QINIT
-        else:
-            Q = QINIT.T * np.ones((N_AGENTS, N_STATES, N_ACTIONS))
-    elif QINIT == "UNIFORM":
-        Q = - np.random.random_sample(size=(N_AGENTS, N_STATES, N_ACTIONS)) - 1
+                         PAYOFF_TYPE, SELECT_TYPE, random_recommender, objective):
+    
+    Q = InitializeQTable(QINIT, N_AGENTS, N_STATES, N_ACTIONS)
 
     if ALPHA == "UNIFORM":
         ALPHA = np.random.random_sample(size=N_AGENTS)
@@ -355,13 +347,10 @@ def vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, GAMMA, 
     for t in range(N_ITER):
 
         ## DETERMINE NEXT STATE
-        if R.mean() > recommender_threshold:
-            if random_recommender == True:
-                S = np.random.randint(N_STATES, size=N_AGENTS)
-            elif random_recommender == False:
-                S = recommender(Q, initial_guess=A)
-            elif random_recommender == None:
-                S = S
+        if random_recommender:
+            S = np.random.randint(N_STATES, size=N_AGENTS)
+        elif not random_recommender:
+            S = recommender(Q=Q, initial_guess=A, objective=objective)
 
         if SELECT_TYPE == "EPSILON":
             ## DETERMINE ACTIONS
