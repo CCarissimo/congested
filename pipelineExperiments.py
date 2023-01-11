@@ -5,7 +5,7 @@
 
 
 def main():
-    from functions import vecSOrun, plot_run, vecSOrun_states, vecSOrun_recommender
+    from functions import vecSOrun, plot_run, vecSOrun_states, vecSOrun_recommender, total_welfare
     import numpy as np
     import tqdm
     import pickle
@@ -18,7 +18,7 @@ def main():
     N_ACTIONS = 3
     NEIGHBOURS = 0
     N_ITER = 100  #10000
-    N_REPEATS = 1  #10
+    N_REPEATS = 1
     mask = np.zeros(N_AGENTS)
     mask[:] = 1
     GAMMA = 0
@@ -30,16 +30,16 @@ def main():
     # Parameters which will be Varied
     EPSILON = "Variable"
     sizeEpsilon = 1  #11
-    epsilons = np.linspace(0, 0.15, sizeEpsilon)
+    epsilons = np.linspace(0, 1, sizeEpsilon)
     
     # recommender parameters
-    recommender_threshold = -1.7
+    recommender_objective = total_welfare  # reference objective function (method)
     
     QINIT = "Variable"
-    sizeQinit = 2
+    sizeQinit = 1
     qinits = {
         "uniform": "UNIFORM",
-        "nash": np.array([-2, -2, -2]),
+        # "nash": np.array([-2, -2, -2]),
         # "cdu": np.array([-2, -1.5, -1]),
         # "cud": np.array([-1.5, -2, -1]),
         # "ucd": np.array([-1, -2, -1.5]),
@@ -48,16 +48,16 @@ def main():
         # "duc": np.array([-1.5, -1, -2])
     }
 
-    NAME = f"sweep_e{sizeEpsilon}_q{sizeQinit}_{PAYOFF_TYPE}_{SELECT_TYPE}_{WELFARE_TYPE}_N{N_AGENTS}_S{N_STATES}_A{N_ACTIONS}_n{NEIGHBOURS}_I{N_ITER}_e{EPSILON}_g{GAMMA}_a{ALPHA}_q{QINIT} "
+    NAME = f"sweep_e{sizeEpsilon}_q{sizeQinit}_{PAYOFF_TYPE}_{SELECT_TYPE}_{WELFARE_TYPE}_N{N_AGENTS}_S{N_STATES}_A{N_ACTIONS}_n{NEIGHBOURS}_I{N_ITER}_e{EPSILON}_g{GAMMA}_a{ALPHA}_q{QINIT}"
 
     results = []
 
     for i, e in enumerate(tqdm.tqdm(epsilons)):
         for norm, initTable in qinits.items():
-            for random_recommender in [False, True, None]:
+            for random_recommender in [False, True]:
                 for t in range(0, N_REPEATS):
                     M, Q = vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, e, GAMMA, ALPHA, initTable,
-                                                PAYOFF_TYPE, SELECT_TYPE, recommender_threshold, random_recommender)
+                                                PAYOFF_TYPE, SELECT_TYPE, random_recommender, recommender_objective)
                     W = [M[t]["R"].mean() for t in range(0, N_ITER)]
                     L = nolds.lyap_r(W)
                     T = np.mean(W[int(0.8 * N_ITER):N_ITER])
@@ -70,8 +70,8 @@ def main():
                     Qvar_mean = np.mean(Qvar)
 
                     # ignore transient phase (approximately 20% of first timesteps)
-                    above_threshold = np.where(np.array(W[int(0.2 * N_ITER):N_ITER]) >= recommender_threshold, 1, 0)
-                    stabilization_score = above_threshold.mean()
+                    # above_threshold = np.where(np.array(W[int(0.2 * N_ITER):N_ITER]) >= recommender_threshold, 1, 0)
+                    # stabilization_score = above_threshold.mean()
 
                     # M, Q = vecSOrun_states(N_AGENTS, N_STATES, N_ACTIONS, NEIGHBOURS, 1, 0, mask, GAMMA, ALPHA, Q,
                     #                        PAYOFF_TYPE, SELECT_TYPE)
@@ -89,7 +89,7 @@ def main():
                         "groups_var": groups_var,
                         "Qvar_mean": Qvar_mean,
                         "random_recommender": random_recommender,
-                        "stabilization_score": stabilization_score
+                        # "stabilization_score": stabilization_score
                     }
 
                     results.append(row)
