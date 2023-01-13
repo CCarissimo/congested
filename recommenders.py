@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.optimize import minimize
 
 
 def heuristic_recommender(Q, n_agents):
@@ -79,3 +80,72 @@ def heuristic_recommender(Q, n_agents):
         S[i] = recommendations_that_force[best_recommendation]
 
     return S.astype(int)
+
+
+def naive_recommender(Q, n_actions):
+    initial_guess = np.random.randint(Q.shape[1], size=Q.shape[0])
+    objective = total_welfare  # hard-coded to total welfare
+    maximize = False
+    coefficient = -1 if maximize else 0
+    fun = lambda x: coefficient * objective(Q, x)
+    recommendation = minimize(fun, x0=initial_guess, bounds=[(0, n_actions - 1) for i in range(len(initial_guess))],
+                              method=None)
+    S = np.rint(recommendation.x).astype(int)
+    return S
+
+
+def random_recommender(Q, n_actions):  # dummy function for random recommenders
+    return np.random.randint(Q.shape[1], size=Q.shape[0])
+
+
+def total_updates(Q, S):
+    n_agents = len(S)
+    S = np.rint(S).astype(int)
+    indices = np.arange(n_agents)
+    A = np.argmax(Q[indices, S, :], axis=1)
+
+    n_up = (A == 0).sum()
+    n_down = (A == 1).sum()
+    n_cross = (A == 2).sum()
+
+    r_0 = 1 + (n_up + n_cross) / n_agents
+    r_1 = 1 + (n_down + n_cross) / n_agents
+    r_2 = (n_up + n_cross) / n_agents + (n_down + n_cross) / n_agents
+    T = [-r_0, -r_1, -r_2]
+
+    dict_map = {0: r_0, 1: r_1, 2: r_2}
+
+    R = -1 * np.vectorize(dict_map.get)(A)
+
+    return np.sum((R - Q[indices, S, A]))
+
+
+def total_welfare(Q, S):
+    n_agents = len(S)
+    S = np.rint(S).astype(int)
+    indices = np.arange(n_agents)
+    A = np.argmax(Q[indices, S, :], axis=1)
+
+    n_up = (A == 0).sum()
+    n_down = (A == 1).sum()
+    n_cross = (A == 2).sum()
+
+    r_0 = 1 + (n_up + n_cross) / n_agents
+    r_1 = 1 + (n_down + n_cross) / n_agents
+    r_2 = (n_up + n_cross) / n_agents + (n_down + n_cross) / n_agents
+    T = [-r_0, -r_1, -r_2]
+
+    dict_map = {0: r_0, 1: r_1, 2: r_2}
+
+    R = -1 * np.vectorize(dict_map.get)(A)
+
+    return np.mean(R)
+
+
+def recommender(Q, initial_guess, objective, n_actions, maximize=False):
+    coefficient = -1 if maximize else 0
+    fun = lambda x: coefficient * objective(Q, x)
+    recommendation = minimize(fun, x0=initial_guess, bounds=[(0, n_actions - 1) for i in range(len(initial_guess))],
+                              method=None)
+    S = np.rint(recommendation.x).astype(int)
+    return S
