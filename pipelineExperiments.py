@@ -5,37 +5,30 @@
 
 
 def main():
-    from functions import vecSOrun_heuristic_recommender, vecSOrun, plot_run, vecSOrun_states, vecSOrun_recommender, total_welfare
     import numpy as np
     import tqdm
     import pickle
     import nolds
     import pandas as pd
-
-    from recommenders import heuristic_recommender
+    from recommenders import heuristic_recommender, naive_recommender, random_recommender
+    from single_run import single_run
+    from routing_networks import braess_augmented_network
 
     # Base Settings Which Will Not Change
     N_AGENTS = 100
     N_STATES = 3
     N_ACTIONS = 3
-    NEIGHBOURS = 0
     N_ITER = 100  #10000
     N_REPEATS = 1
     mask = np.zeros(N_AGENTS)
     mask[:] = 1
     GAMMA = 0
     ALPHA = 0.01
-    PAYOFF_TYPE = "SELFISH"  ## "SELFISH" or "SOCIAL"
-    SELECT_TYPE = "EPSILON"  ## "EPSILON" or "GNET"
-    WELFARE_TYPE = "AVERAGE"  ## "AVERAGE" or "MIN" or "MAX"
 
     # Parameters which will be Varied
     EPSILON = "Variable"
     sizeEpsilon = 1  #11
     epsilons = np.linspace(0, 1, sizeEpsilon)
-    
-    # recommender parameters
-    recommender_objective = total_welfare  # reference objective function (method)
     
     QINIT = "Variable"
     sizeQinit = 1
@@ -50,16 +43,16 @@ def main():
         # "duc": np.array([-1.5, -1, -2])
     }
 
-    NAME = f"sweep_e{sizeEpsilon}_q{sizeQinit}_{PAYOFF_TYPE}_{SELECT_TYPE}_{WELFARE_TYPE}_N{N_AGENTS}_S{N_STATES}_A{N_ACTIONS}_n{NEIGHBOURS}_I{N_ITER}_e{EPSILON}_g{GAMMA}_a{ALPHA}_q{QINIT}"
+    NAME = f"sweep_e{sizeEpsilon}_q{sizeQinit}_N{N_AGENTS}_S{N_STATES}_A{N_ACTIONS}_I{N_ITER}_e{EPSILON}_g{GAMMA}_a{ALPHA}_q{QINIT}"
 
     results = []
 
     for i, e in enumerate(tqdm.tqdm(epsilons)):
         for norm, initTable in qinits.items():
-            for random_recommender in [False]:
+            for recommender in [heuristic_recommender, naive_recommender, random_recommender]:
                 for t in range(0, N_REPEATS):
-                    M, Q = vecSOrun_heuristic_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, e, GAMMA, ALPHA, initTable,
-                                                PAYOFF_TYPE, SELECT_TYPE, random_recommender, recommender_objective)
+                    M = single_run(braess_augmented_network, N_AGENTS, N_STATES, N_ACTIONS, N_ITER, e, GAMMA,
+                                   ALPHA, initTable, recommender, trusting=False)
                     W = [M[t]["R"].mean() for t in range(0, N_ITER)]
                     L = nolds.lyap_r(W)
                     T = np.mean(W[int(0.8 * N_ITER):N_ITER])
@@ -70,10 +63,6 @@ def main():
                     groups_var = np.var(groups)
                     Qvar = [M[t]["Qvar"] for t in range(0, N_ITER)]
                     Qvar_mean = np.mean(Qvar)
-
-                    # ignore transient phase (approximately 20% of first timesteps)
-                    # above_threshold = np.where(np.array(W[int(0.2 * N_ITER):N_ITER]) >= recommender_threshold, 1, 0)
-                    # stabilization_score = above_threshold.mean()
 
                     # M, Q = vecSOrun_states(N_AGENTS, N_STATES, N_ACTIONS, NEIGHBOURS, 1, 0, mask, GAMMA, ALPHA, Q,
                     #                        PAYOFF_TYPE, SELECT_TYPE)
@@ -91,7 +80,6 @@ def main():
                         "groups_var": groups_var,
                         "Qvar_mean": Qvar_mean,
                         "random_recommender": random_recommender,
-                        # "stabilization_score": stabilization_score
                     }
 
                     results.append(row)
