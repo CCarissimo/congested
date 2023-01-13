@@ -5,12 +5,14 @@
 
 
 def main():
-    from functions import vecSOrun, plot_run, vecSOrun_states, vecSOrun_recommender, total_welfare
+    from functions import vecSOrun_heuristic_recommender, vecSOrun, plot_run, vecSOrun_states, vecSOrun_recommender, total_welfare
     import numpy as np
     import tqdm
     import pickle
     import nolds
     import pandas as pd
+
+    from recommenders import heuristic_recommender
 
     # Base Settings Which Will Not Change
     N_AGENTS = 100
@@ -54,9 +56,9 @@ def main():
 
     for i, e in enumerate(tqdm.tqdm(epsilons)):
         for norm, initTable in qinits.items():
-            for random_recommender in [False, True]:
+            for random_recommender in [False]:
                 for t in range(0, N_REPEATS):
-                    M, Q = vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, e, GAMMA, ALPHA, initTable,
+                    M, Q = vecSOrun_heuristic_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, e, GAMMA, ALPHA, initTable,
                                                 PAYOFF_TYPE, SELECT_TYPE, random_recommender, recommender_objective)
                     W = [M[t]["R"].mean() for t in range(0, N_ITER)]
                     L = nolds.lyap_r(W)
