@@ -61,7 +61,8 @@ def vecSOrun(N_AGENTS, N_ACTIONS, N_ITER, EPSILON, mask, GAMMA, ALPHA, QINIT, PA
 
             dict_map = {0: r_0, 1: r_1, 2: r_2}
 
-            R = -1 * np.vectorize(dict_map.get)(A)
+            R = np.array([T[a] for a in A])
+            # R = -1 * np.vectorize(dict_map.get)(A)
 
         if PAYOFF_TYPE == "SOCIAL":
             W = welfare(R, N_AGENTS)
@@ -314,10 +315,10 @@ def total_welfare(Q, S):
 from scipy.optimize import minimize
 
 
-def recommender(Q, initial_guess, objective, maximize=False):
+def recommender(Q, initial_guess, objective, n_actions, maximize=False):
     coefficient = -1 if maximize else 0
     fun = lambda x: coefficient * objective(Q, x)
-    recommendation = minimize(fun, x0=initial_guess, bounds=[(0, 2) for i in range(len(initial_guess))],
+    recommendation = minimize(fun, x0=initial_guess, bounds=[(0, n_actions - 1) for i in range(len(initial_guess))],
                               method=None)
     S = np.rint(recommendation.x).astype(int)
     return S
@@ -325,14 +326,13 @@ def recommender(Q, initial_guess, objective, maximize=False):
 
 def vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, GAMMA, ALPHA, QINIT,
                          PAYOFF_TYPE, SELECT_TYPE, random_recommender, objective):
-    
     Q = InitializeQTable(QINIT, N_AGENTS, N_STATES, N_ACTIONS)
 
     if ALPHA == "UNIFORM":
         ALPHA = np.random.random_sample(size=N_AGENTS)
 
     if EPSILON == "UNIFORM":
-        EPSILON = np.random.random_sample(size=N_AGENTS) 
+        EPSILON = np.random.random_sample(size=N_AGENTS)
     else:
         EPSILON = EPSILON * np.ones(N_AGENTS)
 
@@ -408,7 +408,94 @@ def vecSOrun_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, GAMMA, 
     return M, Q
 
 
-def InitializeQTable(QINIT, N_AGENTS, N_STATES, N_ACTIONS):
+from recommenders import heuristic_recommender
+
+
+def vecSOrun_heuristic_recommender(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, GAMMA, ALPHA, QINIT,
+                         PAYOFF_TYPE, SELECT_TYPE, random_recommender, objective):
+    Q = InitializeQTable(QINIT, N_AGENTS, N_STATES, N_ACTIONS)
+
+    if ALPHA == "UNIFORM":
+        ALPHA = np.random.random_sample(size=N_AGENTS)
+
+    if EPSILON == "UNIFORM":
+        EPSILON = np.random.random_sample(size=N_AGENTS)
+    else:
+        EPSILON = EPSILON * np.ones(N_AGENTS)
+
+    M = {}
+
+    S = np.random.randint(N_STATES, size=N_AGENTS)
+    R = np.ones(N_AGENTS) * -2
+    A = np.random.randint(N_STATES, size=N_AGENTS)
+
+    indices = np.arange(N_AGENTS)
+
+    for t in range(N_ITER):
+
+        ## DETERMINE NEXT STATE
+        if random_recommender:
+            S = np.random.randint(N_STATES, size=N_AGENTS)
+        elif not random_recommender:
+            S = heuristic_recommender(Q, N_AGENTS)
+
+        if SELECT_TYPE == "EPSILON":
+            ## DETERMINE ACTIONS
+            rand = np.random.random_sample(size=N_AGENTS)
+            # print(rand)
+            randA = np.random.randint(N_ACTIONS, size=N_AGENTS)
+            # print(randA)
+            A = np.where(rand >= EPSILON,
+                         np.argmax(Q[indices, S, :], axis=1),
+                         randA)
+        elif SELECT_TYPE == "gnet":
+            pass
+
+        ## DETERMINE PAYOFFS PER PLAYER
+        if N_ACTIONS == 2:
+            mean = np.mean(A)
+            r_0 = 2 - mean
+            r_1 = 1 + mean
+            T = [-r_0, -r_1]
+
+            R = -1 * np.where(A == 0, r_0, r_1)
+
+        elif N_ACTIONS == 3:
+            n_up = (A == 0).sum()
+            n_down = (A == 1).sum()
+            n_cross = (A == 2).sum()
+
+            r_0 = 1 + (n_up + n_cross) / N_AGENTS
+            r_1 = 1 + (n_down + n_cross) / N_AGENTS
+            r_2 = (n_up + n_cross) / N_AGENTS + (n_down + n_cross) / N_AGENTS
+            T = [-r_0, -r_1, -r_2]
+
+            dict_map = {0: r_0, 1: r_1, 2: r_2}
+
+            R = -1 * np.vectorize(dict_map.get)(A)
+
+        if PAYOFF_TYPE == "SOCIAL":
+            W = welfare(R, N_AGENTS)
+            R = W * np.ones(N_AGENTS)
+
+        ## UPDATE AGENT Q VALUES
+        ind = np.arange(N_AGENTS)
+        Q[ind, S, A] = Q[ind, S, A] + ALPHA * (R + GAMMA * Q[ind, S].max(axis=1) - Q[ind, S, A])
+        Qmean = Q.mean(axis=1).mean(axis=0)
+
+        ## SAVE PROGRESS DATA
+        # M[t] = {"A": A, "R": R}
+        M[t] = {"nA": np.bincount(A, minlength=3),
+                "R": R,
+                "T": T,
+                "Qmean": Qmean,
+                "groups": count_groups(Q[ind, S, :], 0.1),
+                "Qvar": Q[ind, S, :].var(axis=0)}
+
+    return M, Q
+
+
+def InitializeQTable(QINIT, N_AGENTS, N_STATES, N_ACTIONS, trusting=False):
     if type(QINIT) == np.ndarray:
         if QINIT.shape == (N_AGENTS, N_STATES, N_ACTIONS):
             Q = QINIT
@@ -416,6 +503,10 @@ def InitializeQTable(QINIT, N_AGENTS, N_STATES, N_ACTIONS):
             Q = QINIT.T * np.ones((N_AGENTS, N_STATES, N_ACTIONS))
     elif QINIT == "UNIFORM":
         Q = - np.random.random_sample(size=(N_AGENTS, N_STATES, N_ACTIONS)) - 1
+
+    if trusting:
+        Q = -1 * np.array([np.identity(N_ACTIONS) for i in range(N_AGENTS)])
+
     return Q
 
 
@@ -442,16 +533,15 @@ def braess_augmented_network(A):
     r_2 = (n_up + n_cross) / n_agents + (n_down + n_cross) / n_agents
     T = [-r_0, -r_1, -r_2]
 
-    dict_map = {0: r_0, 1: r_1, 2: r_2}
-
-    R = -1 * np.vectorize(dict_map.get)(A)
-    return R
+    R = np.array([T[a] for a in A])  # -1 * np.vectorize(dict_map.get)(A)
+    return R, T
 
 
 def bellman_update_q_table(Q, S, A, R, alpha, gamma):
     ind = np.arange(len(S))
-    Q[ind, S, A] = Q[ind, S, A] + alpha * (R + gamma * Q[ind, S].max(axis=1) - Q[ind, S, A])
-    return Q
+    all_belief_updates = alpha * (R + gamma * Q[ind, S].max(axis=1) - Q[ind, S, A])
+    Q[ind, S, A] = Q[ind, S, A] + all_belief_updates
+    return Q, np.abs(all_belief_updates).sum()
 
 
 def e_greedy_select_action(Q, S, epsilon):
@@ -468,9 +558,9 @@ def e_greedy_select_action(Q, S, epsilon):
 
 
 def vecSOrun_recommender_live(N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, mask, GAMMA, ALPHA, QINIT,
-                         PAYOFF_TYPE, SELECT_TYPE):
+                              PAYOFF_TYPE, SELECT_TYPE):
     fig, ax = plt.subplots(1, 1)
-    
+
     Q = InitializeQTable(QINIT)
 
     if ALPHA == "UNIFORM":
@@ -634,7 +724,7 @@ def plot_run(M, NAME, N_AGENTS, N_ACTIONS, N_ITER):
     W = [welfare(M[t]["R"], N_AGENTS, "AVERAGE") for t in range(N_ITER)]
 
     ax[0, 0].plot(W, color=cmap(0.5))
-    ax[0, 0].set_ylim((-2, -1))
+    # ax[0, 0].set_ylim((-2, -1))
     ax[0, 0].set_xlabel('t')
     ax[0, 0].set_ylabel('welfare')
     ax[0, 0].set_title("Average Travel Time")
@@ -649,7 +739,7 @@ def plot_run(M, NAME, N_AGENTS, N_ACTIONS, N_ITER):
 
     for a in range(N_ACTIONS):
         ax[0, 1].scatter(x_vals, T[a], label=a_labels[a], alpha=0.4)
-    ax[0, 1].set_ylim((-2, -1))
+    # ax[0, 1].set_ylim((-2, -1))
     ax[0, 1].set_xlabel('t')
     ax[0, 1].set_ylabel('travel time')
     ax[0, 1].set_title("Min/Max Travel Time")
@@ -675,7 +765,7 @@ def plot_run(M, NAME, N_AGENTS, N_ACTIONS, N_ITER):
     ax[1, 1].set_prop_cycle(color=[cmap(c) for c in np.linspace(0.1, 0.9, N_ACTIONS)])
 
     ax[1, 1].plot(Qmean, label=a_labels)
-    ax[1, 1].set_ylim((-2, -1))
+    # ax[1, 1].set_ylim((-2, -1))
     ax[1, 1].set_xlabel('t')
     ax[1, 1].set_ylabel(r'$\hat{Q}(a)$')
     ax[1, 1].set_title(r"$\hat{Q}(a)$ Averaged over Drivers")
