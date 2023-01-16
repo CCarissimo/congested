@@ -2,10 +2,7 @@ import numpy as np
 import scipy.cluster
 
 
-def initialize_q_table(q_initial, n_agents, n_states, n_actions, trusting=False):
-    if trusting:
-        q_table = -1 * np.array([np.identity(n_actions) for i in range(n_agents)])
-
+def initialize_q_table(q_initial, n_agents, n_states, n_actions):
     if type(q_initial) == np.ndarray:
         if q_initial.shape == (n_agents, n_states, n_actions):
             q_table = q_initial
@@ -13,7 +10,8 @@ def initialize_q_table(q_initial, n_agents, n_states, n_actions, trusting=False)
             q_table = q_initial.T * np.ones((n_agents, n_states, n_actions))
     elif q_initial == "UNIFORM":
         q_table = - np.random.random_sample(size=(n_agents, n_states, n_actions)) - 1
-
+    elif q_initial == "ALIGNED":
+        q_table = np.array([[-1, -2, -2], [-2, -1, -2], [-2, -2, -1]]).T * np.ones((n_agents, n_states, n_actions))
     return q_table
 
 
@@ -42,9 +40,13 @@ def welfare(R, N_AGENTS, welfareType="AVERAGE"):
         raise "SPECIFY WELFARE TYPE"
 
 
-def count_groups(Q_values, dist):
-    y = scipy.cluster.hierarchy.average(Q_values)
+def count_groups(q_values, dist):
+    y = scipy.cluster.hierarchy.average(q_values)
     z = scipy.cluster.hierarchy.fcluster(y, dist, criterion='distance')
     groups = np.bincount(z)
     return len(groups)
 
+
+def calculate_alignment(q_table):
+    argmax_q_table = np.argmax(q_table, axis=2)
+    return (argmax_q_table == np.broadcast_to(np.arange(q_table.shape[2]), (q_table.shape[0], q_table.shape[1]))).mean(axis=0)
