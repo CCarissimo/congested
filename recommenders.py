@@ -98,6 +98,12 @@ def random_recommender(Q, n_actions):  # dummy function for random recommenders
     return np.random.randint(Q.shape[1], size=Q.shape[0])
 
 
+def constant_recommender(Q, n_actions):
+    S = np.zeros(Q.shape[0])
+    S[int(Q.shape[0]/2):] = 1  # half up and half down  
+    return S.astype(int)
+
+
 def total_updates(Q, S):
     n_agents = len(S)
     S = np.rint(S).astype(int)
