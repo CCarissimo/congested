@@ -25,7 +25,10 @@ def single_run(routing_network, n_agents, n_states, n_actions, n_iter, epsilon, 
                    "Qvar": Q[ind, S, :].var(axis=0),
                    "T": travel_time_per_route,
                    "sum_of_belief_updates": sum_of_belief_updates,
-                   "alignment": calculate_alignment(Q)
+                   "alignment": calculate_alignment(Q, S, A),
+                   "S": S,
+                   "A": A,
+                   "Q": Q,
                    }
     return data
 
