@@ -47,6 +47,14 @@ def count_groups(q_values, dist):
     return len(groups)
 
 
-def calculate_alignment(q_table):
+# def calculate_alignment(q_table):
+#     argmax_q_table = np.argmax(q_table, axis=2)
+#     return (argmax_q_table == np.broadcast_to(np.arange(q_table.shape[2]), (q_table.shape[0], q_table.shape[1]))).mean(axis=0)
+
+
+def calculate_alignment(q_table, recommendation, actions):
     argmax_q_table = np.argmax(q_table, axis=2)
-    return (argmax_q_table == np.broadcast_to(np.arange(q_table.shape[2]), (q_table.shape[0], q_table.shape[1]))).mean(axis=0)
+    belief_alignment = (argmax_q_table == np.broadcast_to(np.arange(q_table.shape[2]), (q_table.shape[0], q_table.shape[1]))).mean(axis=0)
+    recommendation_alignment = (recommendation == argmax_q_table[np.arange(q_table.shape[0]), recommendation]).mean()
+    action_alignment = (recommendation==actions).mean()
+    return belief_alignment, recommendation_alignment, action_alignment
