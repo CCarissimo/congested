@@ -10,7 +10,7 @@ def main():
     import pickle
     import nolds
     import pandas as pd
-    from recommenders import heuristic_recommender, naive_recommender, random_recommender, constant_recommender
+    from recommenders import heuristic_recommender, naive_recommender, random_recommender, constant_recommender, optimized_heuristic_recommender
     from single_run import single_run
     from routing_networks import braess_augmented_network
     from run_functions import calculate_alignment
@@ -28,15 +28,15 @@ def main():
 
     # Parameters which will be Varied
     EPSILON = "Variable"
-    sizeEpsilon = 1  # 18
-    epsilons = [0]  # [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]  # np.linspace(0, 1, sizeEpsilon)
+    sizeEpsilon = 7  # 18
+    epsilons = [0, 0.01, 0.04, 0.08, 0.1, 0.15, 0.2]  # [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]  # np.linspace(0, 1, sizeEpsilon)
     
     QINIT = "Variable"
     sizeQinit = 1
     qinits = {
-        # "uniform": "UNIFORM",
+        "uniform": "UNIFORM",
         # "nash": np.array([-2, -2, -2]),
-        "aligned": "ALIGNED",
+        # "aligned": "ALIGNED",
         # "cdu": np.array([-2, -1.5, -1]),
         # "cud": np.array([-1.5, -2, -1]),
         # "ucd": np.array([-1, -2, -1.5]),
@@ -47,6 +47,10 @@ def main():
 
     recommenders = {
         "heuristic": heuristic_recommender,
+        "optimized_action_minimize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="action", minimize=True),
+        "optimized_action_maximize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="action", minimize=False),
+        "optimized_estimate_minimize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="estimate", minimize=True),
+        "optimized_estimate_maximize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="estimate", minimize=False),
         "naive": naive_recommender,
         "random": random_recommender,
         "none": constant_recommender,
@@ -65,6 +69,7 @@ def main():
                     W = [M[t]["R"].mean() for t in range(0, N_ITER)]
                     L = nolds.lyap_r(W)
                     T = np.mean(W[int(0.8 * N_ITER):N_ITER])
+                    T_all = np.mean(W)
                     T_std = np.std(W[int(0.8 * N_ITER):N_ITER])
 
                     groups = [M[t]["groups"] for t in range(0, N_ITER)]
@@ -83,6 +88,7 @@ def main():
                         "epsilon": e,
                         "norm": norm,
                         "T_mean": T,
+                        "T_mean_all": T_all,
                         "T_std": T_std,
                         "Lyapunov": L,
                         "repetition": t,
