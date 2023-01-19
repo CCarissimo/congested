@@ -10,7 +10,7 @@ def main():
     import pickle
     import nolds
     import pandas as pd
-    from recommenders import heuristic_recommender, naive_recommender, random_recommender, constant_recommender, optimized_heuristic_recommender
+    from recommenders import heuristic_recommender, naive_recommender, random_recommender, constant_recommender, optimized_heuristic_recommender, aligned_heuristic_recommender
     from single_run import single_run
     from routing_networks import braess_augmented_network
     from run_functions import calculate_alignment
@@ -29,7 +29,7 @@ def main():
     # Parameters which will be Varied
     EPSILON = "Variable"
     sizeEpsilon = 7  # 18
-    epsilons = [0, 0.01, 0.04, 0.08, 0.1, 0.15, 0.2]  # [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]  # np.linspace(0, 1, sizeEpsilon)
+    epsilons = [0] #, 0.01, 0.04, 0.08, 0.1, 0.15, 0.2]  # [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]  # np.linspace(0, 1, sizeEpsilon)
     
     QINIT = "Variable"
     sizeQinit = 1
@@ -54,18 +54,30 @@ def main():
         "naive": naive_recommender,
         "random": random_recommender,
         "none": constant_recommender,
+        "aligned_heuristic": aligned_heuristic_recommender,
     }
 
     NAME = f"sweep_e{sizeEpsilon}_q{sizeQinit}_N{N_AGENTS}_S{N_STATES}_A{N_ACTIONS}_I{N_ITER}_e{EPSILON}_g{GAMMA}_a{ALPHA}_q{QINIT}"
 
     results = []
 
+    import os
+
+    if not os.path.isdir(NAME):
+        os.mkdir(NAME)
+
     for i, e in enumerate(tqdm.tqdm(epsilons)):
         for norm, initTable in qinits.items():
             for recommender_type, recommender_function in recommenders.items():
+
+                experiment_data = {}
+
                 for t in range(0, N_REPEATS):
                     M = single_run(braess_augmented_network, N_AGENTS, N_STATES, N_ACTIONS, N_ITER, e, GAMMA,
                                    ALPHA, initTable, recommender_function)
+
+                    experiment_data[t] = M
+
                     W = [M[t]["R"].mean() for t in range(0, N_ITER)]
                     L = nolds.lyap_r(W)
                     T = np.mean(W[int(0.8 * N_ITER):N_ITER])
@@ -81,7 +93,7 @@ def main():
                     if recommender_type == "none":
                         alignment = [None, None, None]
                     else:
-                        alignment = np.array([M[t]["alignment"] for t in range(int(0.8 * N_ITER), N_ITER)])
+                        alignment = np.array([M[t]["alignment"][1] for t in range(int(0.8 * N_ITER), N_ITER)])
                         alignment = alignment.mean(axis=0)
 
                     row = {
@@ -97,12 +109,14 @@ def main():
                         "groups_var": groups_var,
                         "Qvar_mean": Qvar_mean,
                         "recommender_type": recommender_type,
-                        "alignment_up": alignment[0],
-                        "alignment_down": alignment[1],
-                        "alignment_cross": alignment[2],
+                        "alignment": alignment,
                     }
 
                     results.append(row)
+
+                filename = f"{NAME}/run_e{e}_{norm}_{recommender_type}"
+                with open(filename, "wb") as file:
+                    pickle.dump(experiment_data, file)
 
     df = pd.DataFrame(results)
 
