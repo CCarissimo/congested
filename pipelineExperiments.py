@@ -4,7 +4,7 @@
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
 
-def main():
+def main(epsilon):
     import numpy as np
     import tqdm
     import pickle
@@ -27,16 +27,18 @@ def main():
     ALPHA = 0.1
 
     # Parameters which will be Varied
-    EPSILON = "Variable"
-    sizeEpsilon = 7  # 18
-    epsilons = [0] #, 0.01, 0.04, 0.08, 0.1, 0.15, 0.2]  # [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]  # np.linspace(0, 1, sizeEpsilon)
+    # EPSILON = 0
+    # sizeEpsilon = 7  # 18
+    epsilons = [epsilon] 
+    # , 0.01, 0.04, 0.08, 0.1, 0.15, 0.2]  # [0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.15, 
+    # 0.3, 0.45, 0.6, 0.75, 0.9, 1]  # np.linspace(0, 1, sizeEpsilon) 
     
     QINIT = "Variable"
-    sizeQinit = 1
+    sizeQinit = 3
     qinits = {
         "uniform": "UNIFORM",
-        # "nash": np.array([-2, -2, -2]),
-        # "aligned": "ALIGNED",
+        "nash": np.array([-2, -2, -2]),
+        "aligned": "ALIGNED",
         # "cdu": np.array([-2, -1.5, -1]),
         # "cud": np.array([-1.5, -2, -1]),
         # "ucd": np.array([-1, -2, -1.5]),
@@ -57,7 +59,7 @@ def main():
         "aligned_heuristic": aligned_heuristic_recommender,
     }
 
-    NAME = f"sweep_e{sizeEpsilon}_q{sizeQinit}_N{N_AGENTS}_S{N_STATES}_A{N_ACTIONS}_I{N_ITER}_e{EPSILON}_g{GAMMA}_a{ALPHA}_q{QINIT}"
+    NAME = f"sweep_e{epsilon}_q{sizeQinit}_N{N_AGENTS}_S{N_STATES}_A{N_ACTIONS}_I{N_ITER}_g{GAMMA}_a{ALPHA}_q{QINIT}"
 
     results = []
 
@@ -124,6 +126,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('epsilon', type=float)
+    args = parser.parse_args()
+
+    main(args.epsilon)
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
