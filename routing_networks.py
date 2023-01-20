@@ -16,6 +16,19 @@ def braess_augmented_network(A):
     return R, T
 
 
+def braess_initial_network(A):
+    n_agents = len(A)
+    n_up = (A == 0).sum()
+    n_down = (A == 1).sum()
+
+    r_0 = 1 + n_up / n_agents
+    r_1 = 1 + n_down / n_agents
+    T = [-r_0, -r_1]
+
+    R = np.array([T[a] for a in A])
+    return R, T
+
+
 def two_route_game(A):
     n_agents = len(A)
     n_up = (A == 0).sum()

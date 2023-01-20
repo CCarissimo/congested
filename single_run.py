@@ -34,13 +34,13 @@ def single_run(routing_network, n_agents, n_states, n_actions, n_iter, epsilon, 
 
 
 if __name__ == "__main__":
-    from routing_networks import braess_augmented_network
-    from recommenders import heuristic_recommender
+    from routing_networks import braess_augmented_network, braess_initial_network
+    from recommenders import heuristic_recommender, constant_recommender
     from plot_functions import plot_run
 
     N_AGENTS = 100
-    N_STATES = 3
-    N_ACTIONS = 3
+    N_STATES = 2
+    N_ACTIONS = 2
     N_ITER = 1000
 
     EPSILON = 0.01
@@ -51,8 +51,8 @@ if __name__ == "__main__":
 
     QINIT = "UNIFORM"  # np.array([-2, -2, -2])
 
-    M = single_run(braess_augmented_network, N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, GAMMA, ALPHA, QINIT,
-                   heuristic_recommender)
+    M = single_run(braess_initial_network, N_AGENTS, N_STATES, N_ACTIONS, N_ITER, EPSILON, GAMMA, ALPHA, QINIT,
+                   constant_recommender)
 
     NAME = f"run_N{N_AGENTS}_S{N_STATES}_A{N_ACTIONS}_I{N_ITER}_e{EPSILON}_g{GAMMA}_a{ALPHA}_q{QINIT}"
 
