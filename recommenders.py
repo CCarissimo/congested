@@ -178,8 +178,8 @@ def assign_flexible_to_up_down(S, force_up, force_down, flexible, Q, arg_max_Q, 
         for x in range(abs(diff_up_down) + int((n_flexible - abs(diff_up_down)) / 2)):
             S[sorted_flexible.pop()] = flexible_recommendation.pop()
 
-        sorted_majority, majority_recommendation = sort_by_belief_difference(
-            Q, arg_max_Q, sorted_flexible, abs(1 - minority))
+        sorted_majority, majority_recommendation = sort_by_belief_improvement(
+            Q, arg_max_Q, sorted_flexible, abs(1 - minority), method, estimate, minimize=minimize)
 
         while len(sorted_majority) > 0:
             S[sorted_majority.pop()] = majority_recommendation.pop()
