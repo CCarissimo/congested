@@ -39,15 +39,15 @@ if __name__ == "__main__":
     from plot_functions import plot_run
 
     N_AGENTS = 100
-    N_STATES = 2
-    N_ACTIONS = 2
-    N_ITER = 1000
+    N_STATES = 3
+    N_ACTIONS = 3
+    N_ITER = 10000
 
     EPSILON = 0.01
     mask = np.zeros(N_AGENTS)
     mask[:] = 1
     GAMMA = 0
-    ALPHA = 0.25
+    ALPHA = 0.01
 
     QINIT = "UNIFORM"  # np.array([-2, -2, -2])
 
