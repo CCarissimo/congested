@@ -48,18 +48,18 @@ def main(epsilon):
     }
 
     recommenders = {
-        "heuristic": heuristic_recommender,
-        "optimized_action_minimize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="action", minimize=True),
-        "optimized_action_maximize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="action", minimize=False),
-        "optimized_estimate_minimize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="estimate", minimize=True),
-        "optimized_estimate_maximize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="estimate", minimize=False),
-        "naive": naive_recommender,
-        "random": random_recommender,
-        "none": constant_recommender,
+        # "heuristic": heuristic_recommender,
+        # "optimized_action_minimize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="action", minimize=True),
+        # "optimized_action_maximize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="action", minimize=False),
+        # "optimized_estimate_minimize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="estimate", minimize=True),
+        # "optimized_estimate_maximize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="estimate", minimize=False),
+        # "naive": naive_recommender,
+        # "random": random_recommender,
+        # "none": constant_recommender,
         "aligned_heuristic": aligned_heuristic_recommender,
     }
 
-    NAME = f"sweep_e{epsilon}_q{sizeQinit}_N{N_AGENTS}_S{N_STATES}_A{N_ACTIONS}_I{N_ITER}_g{GAMMA}_a{ALPHA}_q{QINIT}"
+    NAME = f"sweep_aligned_heuristic_e{epsilon}_q{sizeQinit}_N{N_AGENTS}_S{N_STATES}_A{N_ACTIONS}_I{N_ITER}_g{GAMMA}_a{ALPHA}_q{QINIT}"
 
     results = []
 
