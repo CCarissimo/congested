@@ -325,69 +325,44 @@ def aligned_heuristic_recommender(Q, n_agents):
         else:
             misaligned.append(i)
 
+    n_tuple = (len(aligned_up), len(aligned_down), len(aligned_cross), len(aligned_both), len(misaligned))
+
     n_cross = len(aligned_cross) + int(len(misaligned))  # optimistic estimate of crossers
-    # assuming all those aligned only to cross, and a third of those misaligned
 
-    if n_cross <= (1 / 2) * n_agents:  # if LESS than half of the agents will cross
+    travel_time_estimate = calculate_travel_time_estimate(n_cross, n_agents)
 
-        # assign all aligned recommendations possible
-        S[aligned_up] = up
-        S[aligned_down] = down
-        S[aligned_cross] = cross
+    # assign all aligned recommendations possible
+    S[aligned_up] = up
+    S[aligned_down] = down
+    S[aligned_cross] = cross
 
-        # ASSIGN FLEXIBLE AGENTS
-        diff_up_down = len(aligned_up) - len(aligned_down)
-        n_flexible = len(aligned_both)
-        if abs(diff_up_down) >= n_flexible and n_flexible > 0:
-            if diff_up_down > 0:
-                # assign all flexible to down
-                while len(aligned_both) > 0: S[aligned_both.pop()] = down
+    # ASSIGN FLEXIBLE AGENTS
+    diff_up_down = len(aligned_up) - len(aligned_down)
+    n_flexible = len(aligned_both)
+    if abs(diff_up_down) >= n_flexible > 0:
+        if diff_up_down > 0:
+            # assign all flexible to down
+            while len(aligned_both) > 0: S[aligned_both.pop()] = down
+        else:
+            # assign all flexible to up
+            while len(aligned_both) > 0: S[aligned_both.pop()] = up
+    elif abs(diff_up_down) < n_flexible and n_flexible > 0:
+        if diff_up_down > 0:
+            # assign #diff_up_down flexible to down
+            for x in range(abs(diff_up_down)): S[aligned_both.pop()] = down
+        else:
+            # assign #diff_up_down flexible to up
+            for x in range(abs(diff_up_down)): S[aligned_both.pop()] = up
+        # split remaining flexible up and down equally
+        counter = np.random.randint(0, 1)
+        while len(aligned_both) > 0:
+            if counter % 2 == 0:
+                S[aligned_both.pop()] = down
             else:
-                # assign all flexible to up
-                while len(aligned_both) > 0: S[aligned_both.pop()] = up
-        elif abs(diff_up_down) < n_flexible and n_flexible > 0:
-            if diff_up_down > 0:
-                # assign #diff_up_down flexible to down
-                for x in range(abs(diff_up_down)): S[aligned_both.pop()] = down
-            else:
-                # assign #diff_up_down flexible to up
-                for x in range(abs(diff_up_down)): S[aligned_both.pop()] = up
-            # split remaining flexible up and down equally
-            counter = np.random.randint(0, 1)
-            while len(aligned_both) > 0:
-                if counter % 2 == 0:
-                    S[aligned_both.pop()] = down
-                else:
-                    S[aligned_both.pop()] = up
-                counter += 1
+                S[aligned_both.pop()] = up
+            counter += 1
 
-        # ASSIGN MISALIGNED AGENTS
-        for i, amax in enumerate(arg_max_Q[misaligned]):
-            if amax[up] == cross:
-                if amax[down] == cross:
-                    S[i] = np.argmin([Q[i, up, cross] - Q[i, up, up], Q[i, down, cross] - Q[i, down, down]])
-                else:
-                    S[i] = up
-            elif amax[down] == cross:
-                S[i] = down
-            else:
-                S[i] = cross
-
-    else:
-        # send aligned users to cross to preserve their alignment
-        S[aligned_up] = cross
-        S[aligned_down] = cross
-        S[aligned_both] = cross
-
-        for i, amax in enumerate(arg_max_Q[aligned_cross + misaligned]):
-            if amax[up] == cross:
-                if amax[down] == cross:
-                    S[i] = np.argmin([Q[i, up, cross] - Q[i, up, up], Q[i, down, cross] - Q[i, down, down]])
-                else:
-                    S[i] = up
-            elif amax[down] == cross:
-                S[i] = down
-            else:
-                S[i] = cross
+    action = (-(- np.array(travel_time_estimate) - Q.max(axis=2))).mean(axis=0).argmax()
+    S[misaligned] = action
 
     return S.astype(int)
