@@ -34,11 +34,12 @@ def main(epsilon):
     # 0.3, 0.45, 0.6, 0.75, 0.9, 1]  # np.linspace(0, 1, sizeEpsilon) 
     
     QINIT = "Variable"
-    sizeQinit = 3
+    sizeQinit = 4
     qinits = {
         "uniform": "UNIFORM",
         "nash": np.array([-2, -2, -2]),
         "aligned": "ALIGNED",
+        "misaligned": "MISALIGNED"
         # "cdu": np.array([-2, -1.5, -1]),
         # "cud": np.array([-1.5, -2, -1]),
         # "ucd": np.array([-1, -2, -1.5]),
@@ -52,10 +53,10 @@ def main(epsilon):
         # "optimized_action_minimize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="action", minimize=True),
         # "optimized_action_maximize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="action", minimize=False),
         # "optimized_estimate_minimize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="estimate", minimize=True),
-        # "optimized_estimate_maximize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="estimate", minimize=False),
+        "optimized_estimate_maximize": lambda Q, n_agents: optimized_heuristic_recommender(Q, n_agents, method="estimate", minimize=False),
         # "naive": naive_recommender,
-        # "random": random_recommender,
-        # "none": constant_recommender,
+        "random": random_recommender,
+        "none": constant_recommender,
         "aligned_heuristic": aligned_heuristic_recommender,
     }
 
@@ -93,9 +94,11 @@ def main(epsilon):
                     Qvar_mean = np.mean(Qvar)
 
                     if recommender_type == "none":
-                        alignment = [None, None, None]
+                        alignment = None
+                        alignment_all = None
                     else:
                         alignment = np.array([M[t]["alignment"][1] for t in range(int(0.8 * N_ITER), N_ITER)])
+                        alignment_all = np.array([M[t]["alignment"][1] for t in range(N_ITER)])
                         alignment = alignment.mean(axis=0)
 
                     row = {
@@ -112,6 +115,7 @@ def main(epsilon):
                         "Qvar_mean": Qvar_mean,
                         "recommender_type": recommender_type,
                         "alignment": alignment,
+                        "alignment_all": alignment_all
                     }
 
                     results.append(row)
