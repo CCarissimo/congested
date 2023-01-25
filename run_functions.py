@@ -15,6 +15,11 @@ def initialize_q_table(q_initial, n_agents, n_states, n_actions):
             q_table = np.array([[-1, -2, -2], [-2, -1, -2], [-2, -2, -1]]).T * np.ones((n_agents, n_states, n_actions))
         elif n_actions == 2:
             q_table = np.array([[-1, -2], [-2, -1]]).T * np.ones((n_agents, n_states, n_actions))
+    elif q_initial == "MISALIGNED":
+        if n_actions == 3:
+            q_table = np.array([[-2, -1, -2], [-2, -2, -1], [-1, -2, -2]]).T * np.ones((n_agents, n_states, n_actions))
+        elif n_actions == 2:
+            q_table = np.array([[-2, -1], [-1, -2]]).T * np.ones((n_agents, n_states, n_actions))
     return q_table
 
 
