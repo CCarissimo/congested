@@ -82,7 +82,7 @@ def plot_run(M, NAME, n_agents, n_actions, n_iter):
     ax[1, 0].set_title(r"Variance of q-values")
     ax[1, 0].legend()
 
-    alignment = [M[t]["alignment"] for t in range(n_iter)]
+    alignment = [M[t]["alignment"][0] for t in range(n_iter)]
     ax[0, 1].set_prop_cycle(color=colors)
     ax[0, 1].plot(alignment, label=a_labels)
     # ax[0, 1].set_xlabel('t')

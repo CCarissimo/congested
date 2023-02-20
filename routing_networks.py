@@ -40,3 +40,19 @@ def two_route_game(A):
     R = np.array([T[i] for i in A])
     return R, T
 
+
+def minority_game(A, threshold=0.4):
+    n_agents = len(A)
+    n_up = (A == 0).sum()
+    
+    if n_agents * threshold >= n_up: # up is minority
+        r_0 = 1
+        r_1 = 0
+    else:
+        r_0 = 0
+        r_1 = 1
+    
+    T = [r_0, r_1]
+
+    R = np.array([T[i] for i in A])
+    return R, T
