@@ -19,7 +19,7 @@ import numpy as np
 
 from run_functions import *
 import copy
-
+import pickle
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 Transition = namedtuple('Transition',
@@ -163,37 +163,41 @@ def optimize_model(memory, policy_net, target_net, optimizer):
 
 
 G = nx.DiGraph()
-G.add_nodes_from([0, 1, 2, 3])
+G.add_nodes_from([0, 1, 2, 3, 4])
 G.add_edges_from([
     (0, 1, {"cost": lambda x: x}),
     (0, 2, {"cost": lambda x: 100}),
     (1, 2, {"cost": lambda x: 0}),
     (1, 3, {"cost": lambda x: 100}),
-    (2, 3, {"cost": lambda x: x})])
+    (2, 3, {"cost": lambda x: x}),
+    (2, 4, {"cost": lambda x: 50 + x}),
+    (4, 3, {"cost": lambda x: x})
+])
 
-positions = {0: (0, 1), 1: (1, 2), 2: (1, 0), 3: (2, 1)}
+positions = {0: (0, 1), 1: (1, 2), 2: (1, 0), 3: (2, 1), 4: (1.5, 0)}
 
 state_binary = {
-    0: np.array([0, 0]),
-    1: np.array([0, 1]),
-    2: np.array([1, 0]),
-    3: np.array([1, 1])}
+    0: np.array([0, 0, 0, 0, 1]),
+    1: np.array([0, 0, 0, 1, 0]),
+    2: np.array([0, 0, 1, 0, 0]),
+    3: np.array([0, 1, 0, 0, 0]),
+    4: np.array([1, 0, 0, 0, 0])}
 
 n_agents = 100
 n_actions = 2
-n_states = 4
+n_states = 5
 n_iter = 1000
 
 BATCH_SIZE = 10
 GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.01
-EPS_DECAY = n_iter/10
+EPS_DECAY = n_iter / 10
 TAU = 0.05  # TAU is the update rate of the target network
-LR = 1e-2    # LR is the learning rate of the AdamW optimizer
+LR = 1e-2  # LR is the learning rate of the AdamW optimizer
 
-state, info = torch.Tensor([0, 0]), {}  # env.reset()
-n_observations = 2  # state space
+state, info = torch.Tensor([0, 0, 0, 0, 1]), {}  # env.reset()
+n_observations = 5  # state space
 
 drivers = {}
 for n in range(n_agents):
@@ -204,8 +208,9 @@ for n in range(n_agents):
     drivers[n]["optimizer"] = optim.AdamW(drivers[n]["policy_net"].parameters(), lr=LR, amsgrad=True)
     drivers[n]["memory"] = ReplayMemory(100)
 
-print([driver["policy_net"](torch.tensor(np.array([0, 0]), dtype=torch.float32, device=device).unsqueeze(0)) for driver in drivers.values()])
-
+print(
+    [driver["policy_net"](torch.tensor(np.array([0, 0, 0, 0, 1]), dtype=torch.float32, device=device).unsqueeze(0)) for
+     driver in drivers.values()])
 
 steps_done = 0
 data = {}
@@ -239,7 +244,8 @@ for t in range(n_iter):
 
                 A = torch.cat([
                     select_action(state=torch.tensor(state_binary[S[n]], dtype=torch.float32, device=device),
-                                  policy_net=attr["policy_net"]).unsqueeze(0) for n, attr in drivers.items() if agents_at_s[n]])
+                                  policy_net=attr["policy_net"]).unsqueeze(0) for n, attr in drivers.items() if
+                    agents_at_s[n]])
                 A = torch.clip(A, 0, len(edges) - 1)
                 A = torch.flatten(A)
                 counts = torch.bincount(A, minlength=n_actions).numpy()
@@ -321,13 +327,20 @@ for t in range(n_iter):
         "trajectory": trajectory
     }
 
-beliefs = [driver["policy_net"](torch.tensor(np.array([0, 0]), dtype=torch.float32, device=device).unsqueeze(0)) for driver in drivers.values()]
+beliefs = [
+    driver["policy_net"](torch.tensor(np.array([0, 0, 0, 0, 1]), dtype=torch.float32, device=device).unsqueeze(0)) for
+    driver in drivers.values()]
 print(beliefs)
 
-plt.figure(0, figsize=(10,6))
+with open("dqn_test_data", "wb") as file:
+    pickle.dump(data, file)
+
+with open("dqn_test_drivers", "wb") as file:
+    pickle.dump(drivers, file)
+
+plt.figure(0, figsize=(10, 6))
 plt.plot([data[i]["T"].mean() for i in data.keys()])
 plt.savefig("dqn_bp_average_travel_time.pdf")
-
 
 plt.figure(1, figsize=(10, 8))
 plt.plot([data[i]["A"][0] for i in data.keys()], label=["0->1", "0->2"])
