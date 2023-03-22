@@ -248,7 +248,7 @@ for t in range(n_iter):
                     agents_at_s[n]])
                 A = torch.clip(A, 0, len(edges) - 1)
                 A = torch.flatten(A)
-                counts = torch.bincount(A, minlength=n_actions).numpy()
+                counts = torch.bincount(A, minlength=n_actions).cpu().numpy()
 
                 actions_taken[s] += counts
 
