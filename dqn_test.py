@@ -219,7 +219,7 @@ steps_done = 0
 data = {}
 
 for t in range(n_iter):
-    T = torch.tensor(n_agents)
+    T = np.zeros(n_agents)
     S = np.zeros(n_agents).astype(int)
     actions_taken = torch.empty(size=(n_states, n_actions), device=device)
     trajectory = []
