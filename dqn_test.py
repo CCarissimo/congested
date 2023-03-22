@@ -18,6 +18,7 @@ from agent_functions import bellman_update_q_table, e_greedy_select_action
 import numpy as np
 
 from run_functions import *
+from run_functions import *
 import copy
 import pickle
 
@@ -155,8 +156,9 @@ def optimize_model(memory, policy_net, target_net, optimizer):
     loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
 
     # Optimize the model
-    optimizer.zero_grad()
+    optimizer.zero_grad(set_to_none=True)  # set to none option has slightly different behaviour than setting to 0
     loss.backward()
+
     # In-place gradient clipping
     torch.nn.utils.clip_grad_value_(policy_net.parameters(), 100)
     optimizer.step()
@@ -170,8 +172,8 @@ G.add_edges_from([
     (1, 2, {"cost": lambda x: 0}),
     (1, 3, {"cost": lambda x: 100}),
     (2, 3, {"cost": lambda x: x}),
-    (2, 4, {"cost": lambda x: 50 + x}),
-    (4, 3, {"cost": lambda x: x})
+    # (2, 4, {"cost": lambda x: 50 + x}),
+    # (4, 3, {"cost": lambda x: x})
 ])
 
 positions = {0: (0, 1), 1: (1, 2), 2: (1, 0), 3: (2, 1), 4: (1.5, 0)}
@@ -181,14 +183,15 @@ state_binary = {
     1: np.array([0, 0, 0, 1, 0]),
     2: np.array([0, 0, 1, 0, 0]),
     3: np.array([0, 1, 0, 0, 0]),
-    4: np.array([1, 0, 0, 0, 0])}
+    4: np.array([1, 0, 0, 0, 0])
+}
 
 n_agents = 100
 n_actions = 2
 n_states = 5
-n_iter = 1000
+n_iter = 10
 
-BATCH_SIZE = 10
+BATCH_SIZE = 128
 GAMMA = 0.99
 EPS_START = 0.9
 EPS_END = 0.01
@@ -216,15 +219,10 @@ steps_done = 0
 data = {}
 
 for t in range(n_iter):
-    T = np.zeros(n_agents)
+    T = torch.tensor(n_agents)
     S = np.zeros(n_agents).astype(int)
-    actions_taken = np.zeros((n_states, n_actions))
+    actions_taken = torch.empty(size=(n_states, n_actions), device=device)
     trajectory = []
-
-    # for attr in drivers.values():  #
-    #     state = state_binary[0]
-    #     state = torch.tensor(state, dtype=torch.float32, device=device)  # .unsqueeze(0)
-    #     attr["state"] = state
 
     while np.where(S == 3, False, True).sum() > 0:
         remaining_agents = np.where(S != 3, True, False)
@@ -246,10 +244,10 @@ for t in range(n_iter):
                     select_action(state=torch.tensor(state_binary[S[n]], dtype=torch.float32, device=device),
                                   policy_net=attr["policy_net"]).unsqueeze(0) for n, attr in drivers.items() if
                     agents_at_s[n]])
+
                 A = torch.clip(A, 0, len(edges) - 1)
                 A = torch.flatten(A)
-                counts = torch.bincount(A, minlength=n_actions).cpu().numpy()
-
+                counts = torch.bincount(A, minlength=n_actions)
                 actions_taken[s] += counts
 
                 rewards = [G.adj[s][neighbour[1]]["cost"](counts[i]) for i, neighbour in enumerate(G.edges(s))]
@@ -259,15 +257,15 @@ for t in range(n_iter):
                 S[agents_at_s] = np.array([edges[a] for a in A]).astype(int)
 
                 observations = np.array([edges[a] for a in A]).astype(int)
-                # print(observations)
 
-                # print(np.argwhere(agents_at_s == True))
+                reward = -np.mean(R)
+
                 for i, n in enumerate(np.argwhere(agents_at_s == True).flatten()):
                     # print("in loop")
                     driver = drivers[n]
                     observation = state_binary[observations[i]]
                     action = A[i]
-                    reward = -R[i]
+                    # reward = -R[i]
                     terminated = True if (observation == state_binary[3]).all() else False
                     truncated = False
 
@@ -285,34 +283,33 @@ for t in range(n_iter):
 
                     driver["memory"].push(state, action, next_state, reward)
 
-                    # Move to the next state
-                    state = next_state
-
-                    # Perform one step of the optimization (on the policy network)
-                    # print("optimize")
-                    optimize_model(
-                        driver["memory"],
-                        driver["policy_net"],
-                        driver["target_net"],
-                        driver["optimizer"]
-                    )
-                    # driver["memory"] = memory
-                    # driver["policy_net"] = policy_net
-                    # driver["target_net"] = target_net
-                    # driver["optimizer"] = optimizer
-
-                    # Soft update of the target network's weights
-                    # θ′ ← τ θ + (1 −τ )θ′
-                    target_net_state_dict = driver["target_net"].state_dict()
-                    policy_net_state_dict = driver["policy_net"].state_dict()
-                    for key in policy_net_state_dict:
-                        target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[
-                            key] * (1 - TAU)
-                    driver["target_net"].load_state_dict(target_net_state_dict)
-
                 T[agents_at_s] += R
 
                 trajectory.append(tuple([s, counts, rewards, edges]))
+
+    # Training Loop once all agents have Terminated
+    for driver in drivers.values():
+        # Perform one step of the optimization (on the policy network)
+        # print("optimize")
+        optimize_model(
+            driver["memory"],
+            driver["policy_net"],
+            driver["target_net"],
+            driver["optimizer"]
+        )
+        # driver["memory"] = memory
+        # driver["policy_net"] = policy_net
+        # driver["target_net"] = target_net
+        # driver["optimizer"] = optimizer
+
+        # Soft update of the target network's weights
+        # θ′ ← τ θ + (1 −τ )θ′
+        target_net_state_dict = driver["target_net"].state_dict()
+        policy_net_state_dict = driver["policy_net"].state_dict()
+        for key in policy_net_state_dict:
+            target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[
+                key] * (1 - TAU)
+        driver["target_net"].load_state_dict(target_net_state_dict)
 
     if t % 100 == 0:
         print("step: ", t, "welfare: ", np.mean(T))
@@ -321,9 +318,7 @@ for t in range(n_iter):
     data[t] = {
         "T": T,
         "S": S,
-        #         "Q": copy.deepcopy(Q),
-        #         "amax": Q[:,0].mean(axis=0).argmax(),
-        "A": actions_taken,
+        "A": actions_taken.cpu().numpy(),  # convert it to numpy from a tensor only at the end of the simulation
         "trajectory": trajectory
     }
 
@@ -332,22 +327,22 @@ beliefs = [
     driver in drivers.values()]
 print(beliefs)
 
-with open("dqn_test_data", "wb") as file:
-    pickle.dump(data, file)
-
-with open("dqn_test_drivers", "wb") as file:
-    pickle.dump(drivers, file)
-
-plt.figure(0, figsize=(10, 6))
-plt.plot([data[i]["T"].mean() for i in data.keys()])
-plt.savefig("dqn_bp_average_travel_time.pdf")
-
-plt.figure(1, figsize=(10, 8))
-plt.plot([data[i]["A"][0] for i in data.keys()], label=["0->1", "0->2"])
-plt.plot([data[i]["A"][1] for i in data.keys()], label=["1->2", "1->3"])
-# plt.plot([data[i]["A"][2][0] for i in data.keys()], label="2->3")
-plt.title("actions from states")
-plt.legend()
-plt.savefig("dqn_bp_path_choices.pdf")
-
-plt.show()
+# with open("dqn_test_data", "wb") as file:
+#     pickle.dump(data, file)
+#
+# with open("dqn_test_drivers", "wb") as file:
+#     pickle.dump(drivers, file)
+#
+# plt.figure(0, figsize=(10, 6))
+# plt.plot([data[i]["T"].mean() for i in data.keys()])
+# plt.savefig("dqn_bp_average_travel_time.pdf")
+#
+# plt.figure(1, figsize=(10, 8))
+# plt.plot([data[i]["A"][0] for i in data.keys()], label=["0->1", "0->2"])
+# plt.plot([data[i]["A"][1] for i in data.keys()], label=["1->2", "1->3"])
+# # plt.plot([data[i]["A"][2][0] for i in data.keys()], label="2->3")
+# plt.title("actions from states")
+# plt.legend()
+# plt.savefig("dqn_bp_path_choices.pdf")
+#
+# plt.show()
