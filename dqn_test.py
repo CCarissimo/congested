@@ -61,6 +61,9 @@ class DQN(nn.Module):
         return self.layer3(x)
 
 
+steps_done = 0
+
+
 def select_action(state, policy_net):  # epsilon greedy action selection, perfect
     global steps_done
     sample = random.random()
@@ -164,185 +167,324 @@ def optimize_model(memory, policy_net, target_net, optimizer):
     optimizer.step()
 
 
-G = nx.DiGraph()
-G.add_nodes_from([0, 1, 2, 3, 4])
-G.add_edges_from([
-    (0, 1, {"cost": lambda x: x}),
-    (0, 2, {"cost": lambda x: 100}),
-    (1, 2, {"cost": lambda x: 0}),
-    (1, 3, {"cost": lambda x: 100}),
-    (2, 3, {"cost": lambda x: x}),
-    # (2, 4, {"cost": lambda x: 50 + x}),
-    # (4, 3, {"cost": lambda x: x})
-])
+if __name__ == "__main__":
+    G = nx.DiGraph()
+    G.add_nodes_from([0, 1, 2, 3, 4])
+    G.add_edges_from([
+        (0, 1, {"cost": lambda x: x}),
+        (0, 2, {"cost": lambda x: 100}),
+        (1, 2, {"cost": lambda x: 0}),
+        (1, 3, {"cost": lambda x: 100}),
+        (2, 3, {"cost": lambda x: x}),
+        (3, 1, {"cost": lambda x: 100}),
+        (3, 2, {"cost": lambda x: x}),
+        # (2, 4, {"cost": lambda x: 50 + x}),
+        # (4, 3, {"cost": lambda x: x})
+    ])
 
-positions = {0: (0, 1), 1: (1, 2), 2: (1, 0), 3: (2, 1), 4: (1.5, 0)}
+    positions = {0: (0, 1), 1: (1, 2), 2: (1, 0), 3: (2, 1), 4: (1.5, 0)}
 
-state_binary = {
-    0: np.array([0, 0, 0, 0, 1]),
-    1: np.array([0, 0, 0, 1, 0]),
-    2: np.array([0, 0, 1, 0, 0]),
-    3: np.array([0, 1, 0, 0, 0]),
-    4: np.array([1, 0, 0, 0, 0])
-}
+    edge_labels = {
+            (0, 1): "0",
+            (0, 2): "1",
+            (1, 2): "0",
+            (1, 3): "1",
+            (2, 3): "0",
+            (2, 4): "1",
+            (4, 3): "0"
+        }
 
-n_agents = 100
-n_actions = 2
-n_states = 5
-n_iter = 10
+    # fig, ax = plt.subplots(figsize=(8, 6))
+    # nx.draw_networkx_edges(G, pos=positions, ax=ax)
+    # nx.draw_networkx_nodes(G, pos=positions, ax=ax)
+    # nx.draw_networkx_edge_labels(G, pos=positions, ax=ax,
+    #                              edge_labels=edge_labels, font_color="red")
+    # nx.draw_networkx_labels(G, pos=positions, ax=ax, font_color="white")
+    # plt.show()
 
-BATCH_SIZE = 128
-GAMMA = 0.99
-EPS_START = 0.9
-EPS_END = 0.01
-EPS_DECAY = n_iter / 10
-TAU = 0.05  # TAU is the update rate of the target network
-LR = 1e-2  # LR is the learning rate of the AdamW optimizer
+    n_agents = 100
+    n_actions = 2
+    n_states = 5
+    n_iter = 1000
 
-state, info = torch.Tensor([0, 0, 0, 0, 1]), {}  # env.reset()
-n_observations = 5  # state space
+    BATCH_SIZE = 16
+    GAMMA = 0.99
+    EPS_START = 0.9
+    EPS_END = 0.01
+    EPS_DECAY = n_agents * n_iter/3
+    TAU = 0.05  # TAU is the update rate of the target network
+    LR = 1e-2  # LR is the learning rate of the AdamW optimizer
 
-drivers = {}
-for n in range(n_agents):
-    drivers[n] = {}
-    drivers[n]["policy_net"] = DQN(n_observations, n_actions).to(device)
-    drivers[n]["target_net"] = DQN(n_observations, n_actions).to(device)
-    drivers[n]["target_net"].load_state_dict(drivers[n]["policy_net"].state_dict())  # not sure what this is for
-    drivers[n]["optimizer"] = optim.AdamW(drivers[n]["policy_net"].parameters(), lr=LR, amsgrad=True)
-    drivers[n]["memory"] = ReplayMemory(100)
+    state, info = torch.Tensor([0, 0, 0, 0, 1]), {}  # env.reset()
+    n_observations = 5  # state space
 
-print(
-    [driver["policy_net"](torch.tensor(np.array([0, 0, 0, 0, 1]), dtype=torch.float32, device=device).unsqueeze(0)) for
-     driver in drivers.values()])
+    drivers = {}
+    for n in range(n_agents):
+        drivers[n] = {}
+        drivers[n]["policy_net"] = DQN(n_observations, n_actions).to(device)
+        drivers[n]["target_net"] = DQN(n_observations, n_actions).to(device)
+        drivers[n]["target_net"].load_state_dict(drivers[n]["policy_net"].state_dict())  # not sure what this is for
+        drivers[n]["optimizer"] = optim.AdamW(drivers[n]["policy_net"].parameters(), lr=LR, amsgrad=True)
+        drivers[n]["memory"] = ReplayMemory(100)
 
-steps_done = 0
-data = {}
+    print(
+        [driver["policy_net"](torch.tensor(np.array([0, 0, 0, 0, 1]), dtype=torch.float32, device=device).unsqueeze(0)) for
+         driver in drivers.values()])
 
-for t in range(n_iter):
-    T = np.zeros(n_agents)
-    S = np.zeros(n_agents).astype(int)
-    actions_taken = torch.empty(size=(n_states, n_actions), device=device)
-    trajectory = []
+    data = {}
 
-    while np.where(S == 3, False, True).sum() > 0:
-        remaining_agents = np.where(S != 3, True, False)
-        next_agents = np.where(T == T[remaining_agents].min(), True, False)
+    class roadNetwork:
+        def __init__(self, graph, n_agents):
+            self.done = None
+            self.trajectory = None
+            self.actions_taken = None
+            self.final_states = None
+            self.S = None
+            self.T = None
+            self.base_state = None
+            self.agents_at_base_state = None
+            self.G = graph
+            self.n_agents = n_agents
+            self.n_actions = 2  # max node degree
+            self.n_states = len(G.nodes)  # to be defined
+            self.state_binary = {
+                0: np.array([0, 0, 0, 0, 1]),
+                1: np.array([0, 0, 0, 1, 0]),
+                2: np.array([0, 0, 1, 0, 0]),
+                3: np.array([0, 1, 0, 0, 0]),
+                4: np.array([1, 0, 0, 0, 0])
+            }
 
-        uni = np.unique(S[next_agents])
-        done = np.zeros(n_agents)
+        def reset(self):
+            self.T = np.zeros(self.n_agents)
+            self.S = np.zeros(self.n_agents).astype(int)
+            self.final_states = np.array([(i % 2) + 2 for i in range(self.n_agents)])
+            self.actions_taken = np.zeros((self.n_states, self.n_actions)).astype(int)
+            self.trajectory = []
+            self.done = np.zeros(self.n_agents)
+            info = {}
+            state = [self.state_binary[self.S[n]] for n in range(self.n_agents)]
 
-        for s in uni:
-            if s == 3:
-                # terminate
-                pass
+            remaining_agents = np.where(self.S != self.final_states, True, False)
+            first_agents = np.where(self.T == self.T[remaining_agents].min(), True, False) * remaining_agents
+            uni = np.unique(self.S[first_agents])
+            self.base_state = np.random.choice(uni)
+            self.agents_at_base_state = np.where(self.S == self.base_state, True, False) * first_agents
+
+            # print(self.base_state, self.agents_at_base_state)
+
+            return state, info, self.base_state, self.agents_at_base_state
+
+        def step(self, actions):
+            edges = [neighbour[1] for neighbour in G.edges(self.base_state)]
+
+            actions = np.clip(actions, 0, len(edges) - 1)
+            actions = actions.flatten()
+            # print(actions)
+            counts = np.bincount(actions, minlength=n_actions)
+            self.actions_taken[self.base_state] += counts
+
+            reward_per_action = [G.adj[self.base_state][neighbour[1]]["cost"](counts[i]) for i, neighbour in enumerate(G.edges(self.base_state))]
+
+            rewards = np.array([reward_per_action[a] for a in actions])
+
+            self.S[self.agents_at_base_state] = np.array([edges[a] for a in actions]).astype(int)
+
+            observations = np.array([edges[a] for a in actions]).astype(int)
+
+            # reward = -np.mean(rewards)
+
+            transitions = []
+
+            for i, n in enumerate(np.argwhere(self.agents_at_base_state == True).flatten()):
+                # print("in loop")
+                driver = drivers[n]
+                observation = self.state_binary[observations[i]]
+                action = actions[i]
+                reward = -rewards[i]
+                terminated = True if (observation == self.state_binary[self.final_states[n]]).all() else False
+                truncated = False
+
+                reward = torch.tensor([reward], device=device)
+                self.done[n] = terminated or truncated
+
+                if terminated:
+                    next_state = None
+                else:
+                    next_state = torch.tensor(observation, dtype=torch.float32, device=device)  # .unsqueeze(0)
+
+                # Store the transition in memory
+                state = torch.tensor(self.state_binary[self.S[n]], dtype=torch.float32, device=device).unsqueeze(0)
+                action = torch.tensor(action, dtype=torch.int64, device=device).unsqueeze(0)
+
+                transitions.append((n, (state, action, next_state, reward)))
+
+            self.T[self.agents_at_base_state] += rewards
+
+            self.trajectory.append(tuple([self.base_state, counts, rewards, edges]))
+
+            next_state = [self.state_binary[self.S[n]] for n in range(self.n_agents)]
+            
+            if np.where(self.S == self.final_states, False, True).sum() > 0:
+                done = False
+                non_terminated_agents = np.where(self.S != self.final_states, True, False)
+                first_agents = np.where(self.T == self.T[non_terminated_agents].min(), True,
+                                        False) * non_terminated_agents
+                uni = np.unique(self.S[first_agents])
+                self.base_state = np.random.choice(uni)
+                # print(uni, self.base_state, self.final_states[non_terminated_agents])
+                self.agents_at_base_state = np.where(self.S == self.base_state, True, False) * first_agents
+                # print(self.agents_at_base_state)
+                # print(self.S)
             else:
-                edges = [neighbour[1] for neighbour in G.edges(s)]
+                done = True
+                self.base_state = None
+                self.agents_at_base_state = None
+                
+            return next_state, self.base_state, self.agents_at_base_state, transitions, done
 
-                agents_at_s = np.where(S == s, True, False) * next_agents
+    env = roadNetwork(graph=G, n_agents=n_agents)
 
-                A = torch.cat([
-                    select_action(state=torch.tensor(state_binary[S[n]], dtype=torch.float32, device=device),
-                                  policy_net=attr["policy_net"]).unsqueeze(0) for n, attr in drivers.items() if
-                    agents_at_s[n]])
+    for t in range(n_iter):
+        state, info, base_state, agents_at_base_state = env.reset()
 
-                A = torch.clip(A, 0, len(edges) - 1)
-                A = torch.flatten(A)
-                counts = torch.bincount(A, minlength=n_actions)
-                actions_taken[s] += counts
+        done = False
+        while not done:
 
-                rewards = [G.adj[s][neighbour[1]]["cost"](counts[i]) for i, neighbour in enumerate(G.edges(s))]
+            A = torch.cat([
+                select_action(state=torch.tensor(state[n], dtype=torch.float32, device=device),
+                              policy_net=attr["policy_net"]).unsqueeze(0) for n, attr in drivers.items() if
+                agents_at_base_state[n]])
+            actions = A.cpu().numpy()
 
-                R = np.array([rewards[a] for a in A])
+            state, base_state, agents_at_base_state, transitions, done = env.step(actions)
 
-                S[agents_at_s] = np.array([edges[a] for a in A]).astype(int)
+            for n, transition in transitions:
+                s, a, s_, r = transition
+                drivers[n]["memory"].push(s, a, s_, r)
+                # print(drivers[n]["memory"].memory)
 
-                observations = np.array([edges[a] for a in A]).astype(int)
+        # Training Loop once all agents have Terminated
+        for driver in drivers.values():
+            # Perform one step of the optimization (on the policy network)
+            # print("optimize")
+            optimize_model(
+                driver["memory"],
+                driver["policy_net"],
+                driver["target_net"],
+                driver["optimizer"]
+            )
+            # Soft update of the target network's weights
+            # θ′ ← τ θ + (1 −τ )θ′
+            target_net_state_dict = driver["target_net"].state_dict()
+            policy_net_state_dict = driver["policy_net"].state_dict()
+            for key in policy_net_state_dict:
+                target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[
+                    key] * (1 - TAU)
+            driver["target_net"].load_state_dict(target_net_state_dict)
 
-                reward = -np.mean(R)
+        if t % 100 == 0:
+            print("step: ", t, "welfare: ", np.mean(env.T), "exploration rate:", EPS_END + (EPS_START - EPS_END) * \
+                    math.exp(-1. * steps_done / EPS_DECAY))
 
-                for i, n in enumerate(np.argwhere(agents_at_s == True).flatten()):
-                    # print("in loop")
-                    driver = drivers[n]
-                    observation = state_binary[observations[i]]
-                    action = A[i]
-                    # reward = -R[i]
-                    terminated = True if (observation == state_binary[3]).all() else False
-                    truncated = False
+        ## SAVE PROGRESS DATA[agents]
+        data[t] = {
+            "T": env.T,
+            "S": env.S,
+            "A": env.actions_taken,  # convert it to numpy from a tensor only at the end of the simulation
+            "trajectory": env.trajectory
+        }
 
-                    reward = torch.tensor([reward], device=device)
-                    done[n] = terminated or truncated
+    beliefs = [
+        driver["policy_net"](torch.tensor(np.array([0, 0, 0, 0, 1]), dtype=torch.float32, device=device).unsqueeze(0)) for
+        driver in drivers.values()]
+    print(beliefs)
 
-                    if terminated:
-                        next_state = None
-                    else:
-                        next_state = torch.tensor(observation, dtype=torch.float32, device=device)  # .unsqueeze(0)
+    with open("dqn_test_data", "wb") as file:
+        pickle.dump(data, file)
 
-                    # Store the transition in memory
-                    state = torch.tensor(state_binary[S[n]], dtype=torch.float32, device=device).unsqueeze(0)
-                    action = action.unsqueeze(0)  # torch.tensor(A, dtype=torch.int64, device=device).unsqueeze(0)
+    with open("dqn_test_drivers", "wb") as file:
+        pickle.dump(drivers, file)
 
-                    driver["memory"].push(state, action, next_state, reward)
+    plt.figure(0, figsize=(10, 6))
+    plt.plot([data[i]["T"].mean() for i in data.keys()])
+    plt.savefig("dqn_bp_average_travel_time.pdf")
 
-                T[agents_at_s] += R
+    plt.figure(1, figsize=(10, 8))
+    plt.plot([data[i]["A"][0] for i in data.keys()], label=["0->1", "0->2"])
+    plt.plot([data[i]["A"][1] for i in data.keys()], label=["1->2", "1->3"])
+    # plt.plot([data[i]["A"][2][0] for i in data.keys()], label="2->3")
+    plt.title("actions from states")
+    plt.legend()
+    plt.savefig("dqn_bp_path_choices.pdf")
 
-                trajectory.append(tuple([s, counts, rewards, edges]))
+    fig, ax = plt.subplots(figsize=(8, 6), **{"num": 2})
+    nx.draw_networkx_edges(G, pos=positions, ax=ax)
+    nx.draw_networkx_nodes(G, pos=positions, ax=ax)
+    nx.draw_networkx_edge_labels(G, pos=positions, ax=ax,
+                                 edge_labels=edge_labels, font_color="red")
+    nx.draw_networkx_labels(G, pos=positions, ax=ax, font_color="white")
 
-    # Training Loop once all agents have Terminated
-    for driver in drivers.values():
-        # Perform one step of the optimization (on the policy network)
-        # print("optimize")
-        optimize_model(
-            driver["memory"],
-            driver["policy_net"],
-            driver["target_net"],
-            driver["optimizer"]
-        )
-        # driver["memory"] = memory
-        # driver["policy_net"] = policy_net
-        # driver["target_net"] = target_net
-        # driver["optimizer"] = optimizer
+    plt.show()
 
-        # Soft update of the target network's weights
-        # θ′ ← τ θ + (1 −τ )θ′
-        target_net_state_dict = driver["target_net"].state_dict()
-        policy_net_state_dict = driver["policy_net"].state_dict()
-        for key in policy_net_state_dict:
-            target_net_state_dict[key] = policy_net_state_dict[key] * TAU + target_net_state_dict[
-                key] * (1 - TAU)
-        driver["target_net"].load_state_dict(target_net_state_dict)
-
-    if t % 100 == 0:
-        print("step: ", t, "welfare: ", np.mean(T))
-
-    ## SAVE PROGRESS DATA[agents]
-    data[t] = {
-        "T": T,
-        "S": S,
-        "A": actions_taken.cpu().numpy(),  # convert it to numpy from a tensor only at the end of the simulation
-        "trajectory": trajectory
-    }
-
-beliefs = [
-    driver["policy_net"](torch.tensor(np.array([0, 0, 0, 0, 1]), dtype=torch.float32, device=device).unsqueeze(0)) for
-    driver in drivers.values()]
-print(beliefs)
-
-# with open("dqn_test_data", "wb") as file:
-#     pickle.dump(data, file)
+# while np.where(S == final_states, False, True).sum() > 0:
+#     remaining_agents = np.where(S != final_states, True, False)
 #
-# with open("dqn_test_drivers", "wb") as file:
-#     pickle.dump(drivers, file)
+#     next_agents = np.where(T == T[remaining_agents].min(), True, False) * remaining_agents
 #
-# plt.figure(0, figsize=(10, 6))
-# plt.plot([data[i]["T"].mean() for i in data.keys()])
-# plt.savefig("dqn_bp_average_travel_time.pdf")
+#     uni = np.unique(S[next_agents])
+#     done = np.zeros(n_agents)
 #
-# plt.figure(1, figsize=(10, 8))
-# plt.plot([data[i]["A"][0] for i in data.keys()], label=["0->1", "0->2"])
-# plt.plot([data[i]["A"][1] for i in data.keys()], label=["1->2", "1->3"])
-# # plt.plot([data[i]["A"][2][0] for i in data.keys()], label="2->3")
-# plt.title("actions from states")
-# plt.legend()
-# plt.savefig("dqn_bp_path_choices.pdf")
+#     for s in uni:
 #
-# plt.show()
+#         edges = [neighbour[1] for neighbour in G.edges(s)]
+#
+#         agents_at_s = np.where(S == s, True, False) * next_agents
+#
+#         A = torch.cat([
+#             select_action(state=torch.tensor(self.state_binary[S[n]], dtype=torch.float32, device=device),
+#                           policy_net=attr["policy_net"]).unsqueeze(0) for n, attr in drivers.items() if
+#             agents_at_s[n]])
+#
+#         A = torch.clip(A, 0, len(edges) - 1)
+#         A = torch.flatten(A)
+#         # print(A, type(A), s)
+#         counts = torch.bincount(A, minlength=n_actions).cpu().numpy()
+#         actions_taken[s] += counts
+#
+#         rewards = [G.adj[s][neighbour[1]]["cost"](counts[i]) for i, neighbour in enumerate(G.edges(s))]
+#
+#         R = np.array([rewards[a] for a in A])
+#
+#         S[agents_at_s] = np.array([edges[a] for a in A]).astype(int)
+#
+#         observations = np.array([edges[a] for a in A]).astype(int)
+#
+#         # reward = -np.mean(R)
+#
+#         for i, n in enumerate(np.argwhere(agents_at_s == True).flatten()):
+#             # print("in loop")
+#             driver = drivers[n]
+#             observation = state_binary[observations[i]]
+#             action = A[i]
+#             reward = -R[i]
+#             terminated = True if (observation == state_binary[final_states[n]]).all() else False
+#             truncated = False
+#
+#             reward = torch.tensor([reward], device=device)
+#             done[n] = terminated or truncated
+#
+#             if terminated:
+#                 next_state = None
+#             else:
+#                 next_state = torch.tensor(observation, dtype=torch.float32, device=device)  # .unsqueeze(0)
+#
+#             # Store the transition in memory
+#             state = torch.tensor(state_binary[S[n]], dtype=torch.float32, device=device).unsqueeze(0)
+#             action = action.unsqueeze(0)  # torch.tensor(A, dtype=torch.int64, device=device).unsqueeze(0)
+#
+#             driver["memory"].push(state, action, next_state, reward)
+#
+#         T[agents_at_s] += R
+#
+#         trajectory.append(tuple([s, counts, rewards, edges]))
