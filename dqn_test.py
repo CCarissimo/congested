@@ -168,6 +168,8 @@ def optimize_model(memory, policy_net, target_net, optimizer):
 
 
 if __name__ == "__main__":
+    from environment import roadNetwork
+
     G = nx.DiGraph()
     G.add_nodes_from([0, 1, 2, 3, 4])
     G.add_edges_from([
@@ -232,116 +234,6 @@ if __name__ == "__main__":
          driver in drivers.values()])
 
     data = {}
-
-    class roadNetwork:
-        def __init__(self, graph, n_agents):
-            self.done = None
-            self.trajectory = None
-            self.actions_taken = None
-            self.final_states = None
-            self.S = None
-            self.T = None
-            self.base_state = None
-            self.agents_at_base_state = None
-            self.G = graph
-            self.n_agents = n_agents
-            self.n_actions = 2  # max node degree
-            self.n_states = len(G.nodes)  # to be defined
-            self.state_binary = {
-                0: np.array([0, 0, 0, 0, 1]),
-                1: np.array([0, 0, 0, 1, 0]),
-                2: np.array([0, 0, 1, 0, 0]),
-                3: np.array([0, 1, 0, 0, 0]),
-                4: np.array([1, 0, 0, 0, 0])
-            }
-
-        def reset(self):
-            self.T = np.zeros(self.n_agents)
-            self.S = np.zeros(self.n_agents).astype(int)
-            self.final_states = np.array([(i % 2) + 2 for i in range(self.n_agents)])
-            self.actions_taken = np.zeros((self.n_states, self.n_actions)).astype(int)
-            self.trajectory = []
-            self.done = np.zeros(self.n_agents)
-            info = {}
-            state = [self.state_binary[self.S[n]] for n in range(self.n_agents)]
-
-            remaining_agents = np.where(self.S != self.final_states, True, False)
-            first_agents = np.where(self.T == self.T[remaining_agents].min(), True, False) * remaining_agents
-            uni = np.unique(self.S[first_agents])
-            self.base_state = np.random.choice(uni)
-            self.agents_at_base_state = np.where(self.S == self.base_state, True, False) * first_agents
-
-            # print(self.base_state, self.agents_at_base_state)
-
-            return state, info, self.base_state, self.agents_at_base_state
-
-        def step(self, actions):
-            edges = [neighbour[1] for neighbour in G.edges(self.base_state)]
-
-            actions = np.clip(actions, 0, len(edges) - 1)
-            actions = actions.flatten()
-            # print(actions)
-            counts = np.bincount(actions, minlength=n_actions)
-            self.actions_taken[self.base_state] += counts
-
-            reward_per_action = [G.adj[self.base_state][neighbour[1]]["cost"](counts[i]) for i, neighbour in enumerate(G.edges(self.base_state))]
-
-            rewards = np.array([reward_per_action[a] for a in actions])
-
-            self.S[self.agents_at_base_state] = np.array([edges[a] for a in actions]).astype(int)
-
-            observations = np.array([edges[a] for a in actions]).astype(int)
-
-            # reward = -np.mean(rewards)
-
-            transitions = []
-
-            for i, n in enumerate(np.argwhere(self.agents_at_base_state == True).flatten()):
-                # print("in loop")
-                driver = drivers[n]
-                observation = self.state_binary[observations[i]]
-                action = actions[i]
-                reward = -rewards[i]
-                terminated = True if (observation == self.state_binary[self.final_states[n]]).all() else False
-                truncated = False
-
-                reward = torch.tensor([reward], device=device)
-                self.done[n] = terminated or truncated
-
-                if terminated:
-                    next_state = None
-                else:
-                    next_state = torch.tensor(observation, dtype=torch.float32, device=device)  # .unsqueeze(0)
-
-                # Store the transition in memory
-                state = torch.tensor(self.state_binary[self.S[n]], dtype=torch.float32, device=device).unsqueeze(0)
-                action = torch.tensor(action, dtype=torch.int64, device=device).unsqueeze(0)
-
-                transitions.append((n, (state, action, next_state, reward)))
-
-            self.T[self.agents_at_base_state] += rewards
-
-            self.trajectory.append(tuple([self.base_state, counts, rewards, edges]))
-
-            next_state = [self.state_binary[self.S[n]] for n in range(self.n_agents)]
-            
-            if np.where(self.S == self.final_states, False, True).sum() > 0:
-                done = False
-                non_terminated_agents = np.where(self.S != self.final_states, True, False)
-                first_agents = np.where(self.T == self.T[non_terminated_agents].min(), True,
-                                        False) * non_terminated_agents
-                uni = np.unique(self.S[first_agents])
-                self.base_state = np.random.choice(uni)
-                # print(uni, self.base_state, self.final_states[non_terminated_agents])
-                self.agents_at_base_state = np.where(self.S == self.base_state, True, False) * first_agents
-                # print(self.agents_at_base_state)
-                # print(self.S)
-            else:
-                done = True
-                self.base_state = None
-                self.agents_at_base_state = None
-                
-            return next_state, self.base_state, self.agents_at_base_state, transitions, done
 
     env = roadNetwork(graph=G, n_agents=n_agents)
 

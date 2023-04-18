@@ -27,7 +27,7 @@ def plot_run(M, NAME, n_agents, n_actions, n_iter):
     W = [welfare(M[t]["R"], n_agents, "AVERAGE") for t in range(n_iter)]
 
     ax[0, 0].plot(W, color=u'#1f77b4')
-    ax[0, 0].set_ylim((-2, -1.5))
+    # ax[0, 0].set_ylim((-2, -1.5))
     # ax[0, 0].set_xlabel('t')
     ax[0, 0].set_ylabel('welfare')
     ax[0, 0].set_title("Average Travel Time")
