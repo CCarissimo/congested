@@ -1,25 +1,14 @@
-import torch
-
-import tqdm
 import math
 import random
 from collections import namedtuple, deque
-from itertools import count
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-import networkx as nx
 import matplotlib.pyplot as plt
 
-from agent_functions import bellman_update_q_table, e_greedy_select_action
-import numpy as np
-
-from run_functions import *
-from run_functions import *
-import copy
 import pickle
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -170,26 +159,56 @@ def optimize_model(memory, policy_net, target_net, optimizer):
 if __name__ == "__main__":
     from environment import roadGrid
     from networkx import grid_graph
+    import networkx as nx
+    import numpy as np
 
-    size = 3
+    size = 2
     G = grid_graph(dim=(size, size))
     for e in G.edges():
         G.edges[e]["cost"] = lambda x: 10 + x
+
+    G = nx.DiGraph()
+    G.add_nodes_from([(0, 0), (0, 1), (1, 0), (1, 1)])
+    G.add_edges_from([
+        ((0, 0), (0, 1)),
+        # ((0, 1), (0, 0)),
+        ((0, 0), (1, 0)),
+        # ((1, 0), (0, 0)),
+        ((1, 0), (1, 1)),
+        # ((1, 1), (1, 0)),
+        ((0, 1), (1, 1)),
+        # ((1, 1), (0, 1)),
+        # ((0, 1), (1, 0)),
+        # ((1, 0), (0, 1)),
+    ])
+    for e in G.edges():
+        G.edges[e]["cost"] = lambda x: 10 + x
+
+    # size = 4
+    # G = nx.DiGraph()
+    # G.add_nodes_from([(0, 0), (1, 1), (2, 2), (3, 3)])
+    # G.add_edges_from([
+    #     ((0, 0), (1, 1), {"cost": lambda x: x}),
+    #     ((0, 0), (2, 2), {"cost": lambda x: 100}),
+    #     ((1, 1), (2, 2), {"cost": lambda x: 0}),
+    #     ((1, 1), (3, 3), {"cost": lambda x: 100}),
+    #     ((2, 2), (3, 3), {"cost": lambda x: x}),
+    # ])
 
     # positions = {node: node for node in G.nodes()}
     # fig, ax = plt.subplots(figsize=(8, 6))
     # nx.draw(G, pos=positions, ax=ax)
     # plt.show()
 
-    n_agents = 100
+    n_agents = 1
     n_actions = 4
-    n_states = 5
+    n_states = 4
     n_iter = 1000
 
     BATCH_SIZE = 16
-    GAMMA = 0.20
+    GAMMA = 0
     EPS_START = 0.9
-    EPS_END = 0.05
+    EPS_END = 0.01
     EPS_DECAY = n_agents * n_iter  # larger is slower
     TAU = 0.05  # TAU is the update rate of the target network
     LR = 1e-2  # LR is the learning rate of the AdamW optimizer
@@ -204,11 +223,11 @@ if __name__ == "__main__":
         drivers[n]["target_net"] = DQN(n_observations, n_actions).to(device)
         drivers[n]["target_net"].load_state_dict(drivers[n]["policy_net"].state_dict())  # not sure what this is for
         drivers[n]["optimizer"] = optim.AdamW(drivers[n]["policy_net"].parameters(), lr=LR, amsgrad=True)
-        drivers[n]["memory"] = ReplayMemory(100)
+        drivers[n]["memory"] = ReplayMemory(1000)
 
     data = {}
 
-    env = roadGrid(graph=G, n_agents=n_agents)
+    env = roadGrid(graph=G, n_agents=n_agents, size=size)
 
     print(
         [driver["policy_net"](
@@ -234,7 +253,6 @@ if __name__ == "__main__":
             for n, transition in transitions:
                 s, a, s_, r = transition
                 drivers[n]["memory"].push(s, a, s_, r)
-                # print(drivers[n]["memory"].memory)
 
         # Training Loop once all agents have Terminated
         for driver in drivers.values():
@@ -258,8 +276,12 @@ if __name__ == "__main__":
         if t % 25 == 0:
             print("step: ", t, "welfare: ", np.mean(env.T), "success rate:", env.success.mean(), "exploration rate:", EPS_END + (EPS_START - EPS_END) * \
                         math.exp(-1. * steps_done / EPS_DECAY))
+            belief = drivers[0]["policy_net"](
+                torch.tensor(np.array(env.one_hot_enc[(0, 1)]), dtype=torch.float32, device=device).unsqueeze(0))
 
-        ## SAVE PROGRESS DATA[agents]
+            print(belief)
+
+        # SAVE PROGRESS DATA[agents]
         data[t] = {
             "T": env.T,
             "S": env.S,
@@ -290,7 +312,7 @@ if __name__ == "__main__":
     # plt.title("actions from states")
     # plt.legend()
     # plt.savefig("dqn_bp_path_choices.pdf")
-    #
+
     # fig, ax = plt.subplots(figsize=(8, 6), **{"num": 2})
     # nx.draw_networkx_edges(G, pos=positions, ax=ax)
     # nx.draw_networkx_nodes(G, pos=positions, ax=ax)

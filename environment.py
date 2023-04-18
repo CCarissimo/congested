@@ -5,7 +5,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class roadGrid:
-    def __init__(self, graph, n_agents):
+    def __init__(self, graph, n_agents, size):
         self.last_agent_transits = None
         self.agents_in_transit = None
         self.success = None
@@ -18,11 +18,12 @@ class roadGrid:
         self.T = None
         self.base_state = None
         self.agents_at_base_state = None
+        self.timeout = 32
         self.G = graph
         self.n_agents = n_agents
         self.n_actions = 4  # max node degree
         self.n_states = len(self.G.nodes)  # to be defined
-        self.size = 3
+        self.size = size
         self.one_hot_enc = {(l, r): np.concatenate(
             [np.array([0 if i != l else 1 for i in range(self.size)]), np.array([0 if i != r else 1 for i in range(self.size)])]) for
             (l, r) in self.G.nodes()}
@@ -38,8 +39,8 @@ class roadGrid:
         info = {}
         state = [self.one_hot_enc[tuple(self.S[n])] for n in range(self.n_agents)]
 
-        remaining_agents = np.where((self.S != self.final_states).any(axis=1), True, False)
-        first_agents = np.where(self.T == self.T[remaining_agents].min(), True, False) * remaining_agents
+        remaining_agents = np.ones(self.n_agents, dtype=bool)
+        first_agents = remaining_agents
         uni = np.unique(self.S[first_agents], axis=0)
 
         self.base_state = tuple(uni[np.random.randint(len(uni))])
@@ -93,20 +94,18 @@ class roadGrid:
             observation = self.one_hot_enc[tuple(observations[i])]
             action = actions[i]
             terminated = True if (observation == self.one_hot_enc[tuple(self.final_states[n])]).all() else False
-            reward = -rewards[i] if not terminated else 100
+            reward = -rewards[i] if not terminated else 10000
             truncated = False
 
-            reward = torch.tensor([reward], device=device)
-            self.done[n] = terminated or truncated
-
-            if terminated:
-                next_state = None
-            else:
-                next_state = torch.tensor(observation, dtype=torch.float32, device=device)  # .unsqueeze(0)
+            #if terminated:
+            #    print("agent", n, self.base_state, action, observation, reward)
 
             # Store the transition in memory
             state = torch.tensor(self.one_hot_enc[self.base_state], dtype=torch.float32, device=device).unsqueeze(0)
             action = torch.tensor(action, dtype=torch.int64, device=device).unsqueeze(0)
+            next_state = torch.tensor(observation, dtype=torch.float32, device=device)  # .unsqueeze(0)
+            reward = torch.tensor([reward], device=device)
+            self.done[n] = terminated or truncated
 
             transitions.append((n, (state, action, next_state, reward)))
 
@@ -115,7 +114,7 @@ class roadGrid:
         next_state = [self.one_hot_enc[tuple(self.S[n])] for n in range(self.n_agents)]
 
         if np.where((self.S == self.final_states).all(axis=1), False, True).sum() > 0:
-            if (self.step_counter >= 64).any():  # step counter is an array
+            if (self.step_counter >= self.timeout).any():  # step counter is an array
                 self.success = np.where((self.S == self.final_states).all(axis=1), 1, 0)
                 done = True
                 self.base_state = None
