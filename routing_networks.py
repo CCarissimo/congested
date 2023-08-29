@@ -56,3 +56,51 @@ def minority_game(A, threshold=0.4):
 
     R = np.array([T[i] for i in A])
     return R, T
+
+
+def el_farol_bar(A):
+    n_agents = len(A)
+    n_home = (A == 0).sum()
+    n_bar = (A == 1).sum()
+    pct = n_bar / n_agents
+
+    r_0 = 1
+    r_1 = 2 - 4 * pct if (pct < 0) else 4 * pct - 2
+
+    T = [-r_0, -r_1]
+
+    R = np.array([T[a] for a in A])  # -1 * np.vectorize(dict_map.get)(A)
+    return R, T
+
+
+def pigou(A):
+    n_agents = len(A)
+    n_up = (A == 0).sum()
+    n_down = (A == 1).sum()
+    pct = n_down / n_agents
+
+    r_0 = 0.9
+    r_1 = pct
+
+    T = [-r_0, -r_1]
+
+    R = np.array([T[a] for a in A])  # -1 * np.vectorize(dict_map.get)(A)
+    return R, T
+
+
+def pigou3(A):
+    n_agents = len(A)
+    n_up = (A == 0).sum()
+    n_down = (A == 1).sum()
+    n_cross = (A == 2).sum()
+    #     pct = n_down/n_agents
+
+    r_0 = n_up / n_agents
+    r_1 = 1
+    r_2 = 1  # n_cross/n_agents  # 1
+
+    T = [-r_0, -r_1, -r_2]
+    print(A)
+    R = np.array([T[a] for a in A])  # -1 * np.vectorize(dict_map.get)(A)
+    return R, T
+
