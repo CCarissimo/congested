@@ -82,13 +82,16 @@ def plot_run(M, NAME, n_agents, n_actions, n_iter):
     ax[1, 0].set_title(r"Variance of q-values")
     ax[1, 0].legend()
 
-    alignment = [M[t]["alignment"][0] for t in range(n_iter)]
-    ax[0, 1].set_prop_cycle(color=colors)
-    ax[0, 1].plot(alignment, label=a_labels)
-    # ax[0, 1].set_xlabel('t')
-    ax[0, 1].set_ylabel(r'percentage (n_aligned/n_agents)')
-    ax[0, 1].set_title(r"Recommendation-to-Action Alignment")
-    ax[0, 1].legend()
+    #ToDo: fix alignment calculation so that it
+    # can take variable numbers of states
+
+    # alignment = [M[t]["alignment"][0] for t in range(n_iter)]
+    # ax[0, 1].set_prop_cycle(color=colors)
+    # ax[0, 1].plot(alignment, label=a_labels)
+    # # ax[0, 1].set_xlabel('t')
+    # ax[0, 1].set_ylabel(r'percentage (n_aligned/n_agents)')
+    # ax[0, 1].set_title(r"Recommendation-to-Action Alignment")
+    # ax[0, 1].legend()
 
     # fig.legend(labels=a_labels, labelcolor=colors)
     plt.savefig(NAME + ".png")
