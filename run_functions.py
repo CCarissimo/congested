@@ -2,14 +2,14 @@ import numpy as np
 import scipy.cluster
 
 
-def initialize_q_table(q_initial, n_agents, n_states, n_actions):
+def initialize_q_table(q_initial, n_agents, n_states, n_actions, qmin=0, qmax=1):
     if type(q_initial) == np.ndarray:
         if q_initial.shape == (n_agents, n_states, n_actions):
             q_table = q_initial
         else:
             q_table = q_initial.T * np.ones((n_agents, n_states, n_actions))
     elif q_initial == "UNIFORM":
-        q_table = - np.random.random_sample(size=(n_agents, n_states, n_actions)) - 1
+        q_table = (qmax-qmin)*np.random.random_sample(size=(n_agents, n_states, n_actions)) + qmin
     elif q_initial == "ALIGNED":
         if n_actions == 3:
             q_table = np.array([[-1, -2, -2], [-2, -1, -2], [-2, -2, -1]]).T * np.ones((n_agents, n_states, n_actions))
