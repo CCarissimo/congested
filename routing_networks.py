@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def braess_augmented_network(A):
+def braess_augmented_network(A, cost=0):
     n_agents = len(A)
     n_up = (A == 0).sum()
     n_down = (A == 1).sum()
@@ -9,11 +9,12 @@ def braess_augmented_network(A):
 
     r_0 = 1 + (n_up + n_cross) / n_agents
     r_1 = 1 + (n_down + n_cross) / n_agents
-    r_2 = (n_up + n_cross) / n_agents + (n_down + n_cross) / n_agents
+    r_2 = (n_up + n_cross) / n_agents + (n_down + n_cross) / n_agents + cost
     T = [-r_0, -r_1, -r_2]
 
     R = np.array([T[a] for a in A])  # -1 * np.vectorize(dict_map.get)(A)
-    return R, T
+    S = None
+    return R, S
 
 
 def braess_initial_network(A):
