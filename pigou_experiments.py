@@ -1,0 +1,139 @@
+import numpy as np
+from tqdm.auto import tqdm
+import pickle
+import nolds
+import pandas as pd
+from routing_networks import two_route_game
+from run_functions import *
+from agent_functions import *
+from pathlib import Path
+import utilities
+import math
+
+
+def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost):
+    Q = initialize_q_table(q_initial, n_agents, n_states, n_actions, qmin, qmax)
+    alpha = initialize_learning_rates(alpha, n_agents)
+    eps_decay = n_iter / 8
+    if epsilon == "DECAYED":
+        eps_start = 1
+        eps_end = 0
+    else:
+        eps_start = epsilon
+        eps_end = epsilon
+
+    ind = np.arange(n_agents)
+    S = np.random.randint(n_states, size=n_agents)
+
+    data = {}
+    for t in range(n_iter):
+        epsilon = (eps_end + (eps_start - eps_end) * math.exp(-1. * t / eps_decay))  # if t < N_ITER/10 else 0
+        A = e_greedy_select_action(Q, S, epsilon)
+        R, _ = two_route_game(A)
+        Q, sum_of_belief_updates = bellman_update_q_table(Q, S, A, R, alpha, gamma)
+
+        ## SAVE PROGRESS DATA
+        data[t] = {"nA": np.bincount(A, minlength=3),
+                   "R": R,
+                   "Qmean": Q.mean(axis=1).mean(axis=0),
+                   "groups": count_groups(Q[ind, S, :], 0.1),
+                   "Qvar": Q[ind, S, :].var(axis=0),
+                   "A": A,
+                   "Q": Q,
+                   }
+    return data
+
+
+def main(path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost):
+    name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}"
+    unique_name = utilities.get_unique_filename(base_filename=name)
+
+    M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
+
+    utilities.save_pickle_with_unique_filename(M, f"{path}/{unique_name}.pkl")
+
+    exclusion_threshold = 0.8
+    W = [M[t]["R"].mean() for t in range(0, n_iter)]
+    L = nolds.lyap_r(W)
+    T = np.mean(W[int(exclusion_threshold * n_iter):n_iter])
+    T_all = np.mean(W)
+    T_std = np.std(W[int(exclusion_threshold * n_iter):n_iter])
+
+    groups = [M[t]["groups"] for t in range(0, n_iter)]
+    groups_mean = np.mean(groups)
+    groups_var = np.var(groups)
+    Qvar = [M[t]["Qvar"] for t in range(0, n_iter)]
+    Qvar_mean = np.mean(Qvar)
+
+    row = {
+        "n_agents": n_agents,
+        "alpha": alpha,
+        "epsilon": epsilon,
+        "cost": cost,
+        "T_mean": T,
+        "T_mean_all": T_all,
+        "T_std": T_std,
+        "Lyapunov": L,
+        "groups_mean": groups_mean,
+        "groups_var": groups_var,
+        "Qvar_mean": Qvar_mean,
+    }
+
+    return row
+
+
+def run_apply_async_multiprocessing(func, argument_list, num_processes):
+    pool = mp.Pool(processes=num_processes)
+
+    jobs = [
+        pool.apply_async(func=func, args=(*argument,)) if isinstance(argument, tuple) else pool.apply_async(func=func,
+                                                                                                            args=(
+                                                                                                            argument,))
+        for argument in argument_list]
+    pool.close()
+    result_list_tqdm = []
+    for job in tqdm(jobs):
+        result_list_tqdm.append(job.get())
+
+    return result_list_tqdm
+
+
+if __name__ == '__main__':
+    import argparse
+    import multiprocessing as mp
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('path', type=str)
+    args = parser.parse_args()
+
+    Path(args.path).mkdir(parents=True, exist_ok=True)
+
+    path = args.path
+    #n_agents = 100
+    n_states = 1
+    n_actions = 2
+    n_iter = 10000
+    #epsilon = "variable"
+    #alpha = "variable"
+    gamma = 0.8
+    q_initial = "UNIFORM"
+    qmin = -1
+    qmax = 0
+    #cost = "variable"
+
+    num_cpus = mp.cpu_count()
+    argument_list = []
+    for epsilon in np.linspace(0, 0.2, 21):
+        for alpha in np.linspace(0.01, 0.2, 11):
+            for cost in np.linspace(0, 0.5, 11):
+                for n_agents in [100, 500, 1000, 5000, 10000]:
+                    for i in range(40):
+                        parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
+                        argument_list.append(parameter_tuple)
+    results = run_apply_async_multiprocessing(main, argument_list=argument_list, num_processes=num_cpus)
+
+    name = f"braess_augmented_results.csv"
+    unique_name = utilities.get_unique_filename(base_filename=name)
+    results_df = pd.DataFrame(results)
+    results_df.to_csv(f"{path}/{unique_name}", index=False)
+    print(f"saving to {path}/{unique_name}")
