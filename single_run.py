@@ -3,7 +3,7 @@ from run_functions import *
 from agent_functions import *
 
 
-def single_run(routing_network, n_agents, n_states, n_actions, n_iter, epsilon, gamma, alpha, q_initial, recommender):
+def single_run(game, n_agents, n_states, n_actions, n_iter, epsilon, gamma, alpha, q_initial, recommender):
     Q = initialize_q_table(q_initial, n_agents, n_states, n_actions)
     alpha = initialize_learning_rates(alpha, n_agents)
     epsilon = initialize_exploration_rates(epsilon, n_agents)
@@ -12,9 +12,11 @@ def single_run(routing_network, n_agents, n_states, n_actions, n_iter, epsilon, 
 
     for t in range(n_iter):
 
-        S = recommender(Q, n_agents)
+        # S = recommender(Q, n_agents)
         A = e_greedy_select_action(Q, S, epsilon)
-        R, travel_time_per_route = routing_network(A)
+
+        R, reward_per_action = game(A)
+        
         Q, sum_of_belief_updates = bellman_update_q_table(Q, S, A, R, alpha, gamma)
 
         ## SAVE PROGRESS DATA
@@ -23,7 +25,7 @@ def single_run(routing_network, n_agents, n_states, n_actions, n_iter, epsilon, 
                    "Qmean": Q.mean(axis=1).mean(axis=0),
                    "groups": count_groups(Q[ind, S, :], 0.1),
                    "Qvar": Q[ind, S, :].var(axis=0),
-                   "T": travel_time_per_route,
+                   "T": reward_per_action,
                    "sum_of_belief_updates": sum_of_belief_updates,
                    "alignment": calculate_alignment(Q, S, A),
                    "S": S,

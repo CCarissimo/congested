@@ -58,6 +58,21 @@ def minority_game(A, threshold=0.4):
     return R, T
 
 
+def minority_game_2(A, threshold=0.4):
+    n_agents = len(A)
+    n_a = (A == 0).sum()
+    fraction_a = n_a/n_agents
+    fraction_b = 1 - fraction_a
+    
+    r_a = 1 - 2*fraction_a
+    r_b = 1 - 2*fraction_b
+    
+    T = [r_a, r_b]
+
+    R = np.array([T[i] for i in A])
+    return R, T
+
+
 def el_farol_bar(A):
     n_agents = len(A)
     n_home = (A == 0).sum()
@@ -79,7 +94,7 @@ def pigou(A):
     n_down = (A == 1).sum()
     pct = n_down / n_agents
 
-    r_0 = 0.9
+    r_0 = 1
     r_1 = pct
 
     T = [-r_0, -r_1]

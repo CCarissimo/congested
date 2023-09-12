@@ -1,20 +1,15 @@
-# This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
+import numpy as np
+import tqdm
+import pickle
+import nolds
+import pandas as pd
+from recommenders import heuristic_recommender, naive_recommender, random_recommender, constant_recommender, optimized_heuristic_recommender, aligned_heuristic_recommender
+from single_run import single_run
+from routing_networks import braess_augmented_network
+from run_functions import calculate_alignment
 
 def main(epsilon):
-    import numpy as np
-    import tqdm
-    import pickle
-    import nolds
-    import pandas as pd
-    from recommenders import heuristic_recommender, naive_recommender, random_recommender, constant_recommender, optimized_heuristic_recommender, aligned_heuristic_recommender
-    from single_run import single_run
-    from routing_networks import braess_augmented_network
-    from run_functions import calculate_alignment
-
+    
     # Base Settings Which Will Not Change
     N_AGENTS = 100
     N_STATES = 3
