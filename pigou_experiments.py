@@ -48,7 +48,7 @@ def main(path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_i
     M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
 
     experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}"
-    Path(experiment_name).mkdir(parents=True, exist_ok=True)
+    Path(f"{path}/{experiment_name}").mkdir(parents=True, exist_ok=True)
     run_name = utilities.get_unique_filename(base_filename="dump_run")
     utilities.save_pickle_with_unique_filename(M, f"{path}/{experiment_name}/{run_name}.pkl")
 
