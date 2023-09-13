@@ -101,10 +101,29 @@ def run_apply_async_multiprocessing(func, argument_list, num_processes):
 if __name__ == '__main__':
     import argparse
     import multiprocessing as mp
+    import os
 
     parser = argparse.ArgumentParser()
     parser.add_argument('path', type=str)
     args = parser.parse_args()
+
+    # consider just leaving this as main
+    # config file can be JSON
+    # if using a dataclass you can initialize from JSON and check that variables are correct
+
+    # dict --> dataclass
+
+    # from dataclasses import dataclass
+    # import json
+    # @dataclass
+    # class Config:
+    #     path: str
+    # d = json.load()
+    # data = Config(**d)
+    #
+    # sbatch - -time = 48:00: 00 - -ntasks = 64 - -mem - per - cpu = 8G - -wrap = "python braess_experiments.py /cluster/scratch/ccarissimo/game_dynamics/braess_augmented"
+    #
+    # num_workers = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))
 
     Path(args.path).mkdir(parents=True, exist_ok=True)
 
@@ -121,7 +140,7 @@ if __name__ == '__main__':
     qmax = -1
     #cost = "variable"
 
-    num_cpus = mp.cpu_count()
+    num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
     for epsilon in list(np.linspace(0, 0.2, 21))+list(np.linspace(0.3, 1, 8))+["DECAYED"]:  # total 30
         for alpha in np.linspace(0.01, 0.2, 11):

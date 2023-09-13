@@ -40,7 +40,7 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
                    "Qvar": Q[ind, S, :].var(axis=0),
                    "A": A,
                    "Q": Q,
-                   }
+                   }  # dataclass for single iteration
     return data
 
 
@@ -121,7 +121,7 @@ if __name__ == '__main__':
     qmax = 0
     #cost = "variable"
 
-    num_cpus = mp.cpu_count()
+    num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
     for epsilon in list(np.linspace(0, 0.2, 21)) + list(np.linspace(0.3, 1, 8)) + ["DECAYED"]:  # total 30
         for alpha in np.linspace(0.01, 0.2, 11):
