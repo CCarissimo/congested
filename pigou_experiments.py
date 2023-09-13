@@ -45,16 +45,16 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
 
 
 def main(path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost):
-    name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}"
-    unique_name = utilities.get_unique_filename(base_filename=name)
-
     M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
 
-    utilities.save_pickle_with_unique_filename(M, f"{path}/{unique_name}.pkl")
+    experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}"
+    Path(experiment_name).mkdir(parents=True, exist_ok=True)
+    run_name = utilities.get_unique_filename(base_filename="dump_run")
+    utilities.save_pickle_with_unique_filename(M, f"{path}/{experiment_name}/{run_name}.pkl")
 
     exclusion_threshold = 0.8
     W = [M[t]["R"].mean() for t in range(0, n_iter)]
-    L = nolds.lyap_r(W)
+    L = nolds.lyap_r(W, int(n_iter*0.25), lag=552)
     T = np.mean(W[int(exclusion_threshold * n_iter):n_iter])
     T_all = np.mean(W)
     T_std = np.std(W[int(exclusion_threshold * n_iter):n_iter])
@@ -123,10 +123,10 @@ if __name__ == '__main__':
 
     num_cpus = mp.cpu_count()
     argument_list = []
-    for epsilon in np.linspace(0, 0.2, 21):
+    for epsilon in list(np.linspace(0, 0.2, 21)) + list(np.linspace(0.3, 1, 8)) + ["DECAYED"]:  # total 30
         for alpha in np.linspace(0.01, 0.2, 11):
             for cost in np.linspace(0, 0.5, 11):
-                for n_agents in [100, 500, 1000, 5000, 10000]:
+                for n_agents in [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
                     for i in range(40):
                         parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
                         argument_list.append(parameter_tuple)
