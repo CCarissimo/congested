@@ -123,6 +123,7 @@ def run_apply_async_multiprocessing(func, argument_list, num_processes):
 if __name__ == '__main__':
     import argparse
     import multiprocessing as mp
+    import os
 
     parser = argparse.ArgumentParser()
     parser.add_argument('path', type=str)
