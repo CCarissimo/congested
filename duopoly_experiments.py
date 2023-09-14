@@ -82,7 +82,7 @@ def main(path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_i
 
     exclusion_threshold = 0.8
     W = [M[t]["R"].mean() for t in range(0, n_iter)]
-    L = nolds.lyap_r(W, int(n_iter*0.25))
+    L = nolds.lyap_r(W)
     T = np.mean(W[int(exclusion_threshold * n_iter):n_iter])
     T_all = np.mean(W)
     T_std = np.std(W[int(exclusion_threshold * n_iter):n_iter])
