@@ -38,23 +38,23 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
                    "Qmean": Q.mean(axis=1).mean(axis=0),
                    "groups": count_groups(Q[ind, S, :], 0.1),
                    "Qvar": Q[ind, S, :].var(axis=0),
-                   "A": A,
-                   "Q": Q,
+                   # "A": A,
+                   # "Q": Q,
                    }  # dataclass for single iteration
     return data
 
 
 def main(path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost):
     M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
-    experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}"
-    Path(f"{path}/{experiment_name}").mkdir(parents=True, exist_ok=True)
-
-    all_q_tables = np.stack([M[t]["Q"] for t in M.keys()])
-    utilities.save_numpy_array_with_unique_filename(all_q_tables, f"{path}/{experiment_name}/q_tables.npy")
-    all_rewards = np.stack([M[t]["R"] for t in M.keys()])
-    utilities.save_numpy_array_with_unique_filename(all_rewards, f"{path}/{experiment_name}/rewards.npy")
-    all_actions = np.stack([M[t]["A"] for t in M.keys()])
-    utilities.save_numpy_array_with_unique_filename(all_actions, f"{path}/{experiment_name}/actions.npy")
+    # experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}"
+    # Path(f"{path}/{experiment_name}").mkdir(parents=True, exist_ok=True)
+    #
+    # all_q_tables = np.stack([M[t]["Q"] for t in M.keys()])
+    # utilities.save_numpy_array_with_unique_filename(all_q_tables, f"{path}/{experiment_name}/q_tables.npy")
+    # all_rewards = np.stack([M[t]["R"] for t in M.keys()])
+    # utilities.save_numpy_array_with_unique_filename(all_rewards, f"{path}/{experiment_name}/rewards.npy")
+    # all_actions = np.stack([M[t]["A"] for t in M.keys()])
+    # utilities.save_numpy_array_with_unique_filename(all_actions, f"{path}/{experiment_name}/actions.npy")
 
     exclusion_threshold = 0.8
     W = [M[t]["R"].mean() for t in range(0, n_iter)]
