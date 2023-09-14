@@ -134,7 +134,7 @@ if __name__ == '__main__':
     n_iter = 10000
     #epsilon = "variable"
     #alpha = "variable"
-    gamma = 0.8
+    gamma = 0
     q_initial = "UNIFORM"
     qmin = -2
     qmax = -1
