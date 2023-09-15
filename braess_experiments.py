@@ -124,10 +124,6 @@ if __name__ == '__main__':
     #     path: str
     # d = json.load()
     # data = Config(**d)
-    #
-    # sbatch - -time = 48:00: 00 - -ntasks = 64 - -mem - per - cpu = 8G - -wrap = "python braess_experiments.py /cluster/scratch/ccarissimo/game_dynamics/braess_augmented"
-    #
-    # num_workers = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))
 
     Path(args.path).mkdir(parents=True, exist_ok=True)
 

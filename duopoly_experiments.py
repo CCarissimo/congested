@@ -94,7 +94,7 @@ def main(path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_i
     Qvar_mean = np.mean(Qvar)
 
     row = {
-        "n_actions": n_agents,
+        "n_actions": n_actions,
         "alpha": alpha,
         "epsilon": epsilon,
         "T_mean": T,
