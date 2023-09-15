@@ -36,7 +36,7 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
         data[t] = {
                    "R": R,
                    "Qmean": Q.mean(axis=1).mean(axis=0),
-                   "groups": count_groups(Q[ind, S, :], 0.1),
+                   # "groups": count_groups(Q[ind, S, :], 0.1),
                    "Qvar": Q[ind, S, :].var(axis=0),
                    # "A": A,
                    # "Q": Q,
