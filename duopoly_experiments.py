@@ -61,28 +61,31 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
         Q, sum_of_belief_updates = bellman_update_q_table(Q, S, A, R, alpha, gamma)
 
         ## SAVE PROGRESS DATA
-        data[t] = {"nA": np.bincount(A, minlength=3),
+        data[t] = {
                    "R": R,
                    "Qmean": Q.mean(axis=1).mean(axis=0),
                    "Qvar": Q[ind, S, :].var(axis=0),
-                   "A": A,
-                   "Q": Q,
+                   # "A": A,
+                   # "Q": Q,
                    }
     return data
 
 
 def main(path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax):
-
     M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax)
+    # experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}"
+    # Path(f"{path}/{experiment_name}").mkdir(parents=True, exist_ok=True)
 
-    experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}"
-    Path(experiment_name).mkdir(parents=True, exist_ok=True)
-    run_name = utilities.get_unique_filename(base_filename="dump_run")
-    utilities.save_pickle_with_unique_filename(M, f"{path}/{experiment_name}/{run_name}.pkl")
+    # all_q_tables = np.stack([M[t]["Q"] for t in M.keys()])
+    # utilities.save_numpy_array_with_unique_filename(all_q_tables, f"{path}/{experiment_name}/q_tables.npy")
+    # all_rewards = np.stack([M[t]["R"] for t in M.keys()])
+    # utilities.save_numpy_array_with_unique_filename(all_rewards, f"{path}/{experiment_name}/rewards.npy")
+    # all_actions = np.stack([M[t]["A"] for t in M.keys()])
+    # utilities.save_numpy_array_with_unique_filename(all_actions, f"{path}/{experiment_name}/actions.npy")
 
     exclusion_threshold = 0.8
     W = [M[t]["R"].mean() for t in range(0, n_iter)]
-    L = nolds.lyap_r(W, int(n_iter*0.25))
+    L = nolds.lyap_r(W)
     T = np.mean(W[int(exclusion_threshold * n_iter):n_iter])
     T_all = np.mean(W)
     T_std = np.std(W[int(exclusion_threshold * n_iter):n_iter])
@@ -123,6 +126,7 @@ def run_apply_async_multiprocessing(func, argument_list, num_processes):
 if __name__ == '__main__':
     import argparse
     import multiprocessing as mp
+    import os
 
     parser = argparse.ArgumentParser()
     parser.add_argument('path', type=str)
@@ -142,7 +146,7 @@ if __name__ == '__main__':
     qmin = 0
     qmax = 1
 
-    num_cpus = mp.cpu_count()
+    num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
     for epsilon in list(np.linspace(0, 0.2, 21)) + list(np.linspace(0.3, 1, 8)) + ["DECAYED"]:  # total 30
         for alpha in np.linspace(0.01, 0.2, 11):

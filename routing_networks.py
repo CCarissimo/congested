@@ -30,12 +30,12 @@ def braess_initial_network(A):
     return R, T
 
 
-def two_route_game(A):
+def two_route_game(A, cost=1):
     n_agents = len(A)
     n_up = (A == 0).sum()
 
-    r_0 = n_up / n_agents
-    r_1 = 1
+    r_0 = n_up / n_agents + cost
+    r_1 = (1 - n_up / n_agents) + (1 - cost)
     T = [-r_0, -r_1]
 
     R = np.array([T[i] for i in A])
@@ -89,13 +89,13 @@ def el_farol_bar(A):
     return R, T
 
 
-def pigou(A):
+def pigou(A, cost=1):
     n_agents = len(A)
     n_up = (A == 0).sum()
     n_down = (A == 1).sum()
     pct = n_down / n_agents
 
-    r_0 = 1
+    r_0 = cost
     r_1 = pct
 
     T = [-r_0, -r_1]
