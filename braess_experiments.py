@@ -44,46 +44,50 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
     return data
 
 
-def main(path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost):
-    M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
-    # experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}"
-    # Path(f"{path}/{experiment_name}").mkdir(parents=True, exist_ok=True)
-    #
-    # all_q_tables = np.stack([M[t]["Q"] for t in M.keys()])
-    # utilities.save_numpy_array_with_unique_filename(all_q_tables, f"{path}/{experiment_name}/q_tables.npy")
-    # all_rewards = np.stack([M[t]["R"] for t in M.keys()])
-    # utilities.save_numpy_array_with_unique_filename(all_rewards, f"{path}/{experiment_name}/rewards.npy")
-    # all_actions = np.stack([M[t]["A"] for t in M.keys()])
-    # utilities.save_numpy_array_with_unique_filename(all_actions, f"{path}/{experiment_name}/actions.npy")
+def main(path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost):
+    all_repetitions = []
+    for i in range(repetitions):
+        M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
+        # experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}"
+        # Path(f"{path}/{experiment_name}").mkdir(parents=True, exist_ok=True)
+        #
+        # all_q_tables = np.stack([M[t]["Q"] for t in M.keys()])
+        # utilities.save_numpy_array_with_unique_filename(all_q_tables, f"{path}/{experiment_name}/q_tables.npy")
+        # all_rewards = np.stack([M[t]["R"] for t in M.keys()])
+        # utilities.save_numpy_array_with_unique_filename(all_rewards, f"{path}/{experiment_name}/rewards.npy")
+        # all_actions = np.stack([M[t]["A"] for t in M.keys()])
+        # utilities.save_numpy_array_with_unique_filename(all_actions, f"{path}/{experiment_name}/actions.npy")
 
-    exclusion_threshold = 0.8
-    W = [M[t]["R"].mean() for t in range(0, n_iter)]
-    L = nolds.lyap_r(W)
-    T = np.mean(W[int(exclusion_threshold * n_iter):n_iter])
-    T_all = np.mean(W)
-    T_std = np.std(W[int(exclusion_threshold * n_iter):n_iter])
+        exclusion_threshold = 0.8
+        W = [M[t]["R"].mean() for t in range(0, n_iter)]
+        L = nolds.lyap_r(W)
+        T = np.mean(W[int(exclusion_threshold * n_iter):n_iter])
+        T_all = np.mean(W)
+        T_std = np.std(W[int(exclusion_threshold * n_iter):n_iter])
 
-    groups = [M[t]["groups"] for t in range(0, n_iter)]
-    groups_mean = np.mean(groups)
-    groups_var = np.var(groups)
-    Qvar = [M[t]["Qvar"] for t in range(0, n_iter)]
-    Qvar_mean = np.mean(Qvar)
+        # groups = [M[t]["groups"] for t in range(0, n_iter)]
+        # groups_mean = np.mean(groups)
+        # groups_var = np.var(groups)
+        Qvar = [M[t]["Qvar"] for t in range(0, n_iter)]
+        Qvar_mean = np.mean(Qvar)
 
-    row = {
-        "n_agents": n_agents,
-        "alpha": alpha,
-        "epsilon": epsilon,
-        "cost": cost,
-        "T_mean": T,
-        "T_mean_all": T_all,
-        "T_std": T_std,
-        "Lyapunov": L,
-        "groups_mean": groups_mean,
-        "groups_var": groups_var,
-        "Qvar_mean": Qvar_mean,
-    }
+        row = {
+            "repetition": i,
+            "n_agents": n_agents,
+            "alpha": alpha,
+            "epsilon": epsilon,
+            "cost": cost,
+            "T_mean": T,
+            "T_mean_all": T_all,
+            "T_std": T_std,
+            "Lyapunov": L,
+            # "groups_mean": groups_mean,
+            # "groups_var": groups_var,
+            "Qvar_mean": Qvar_mean,
+        }
+        all_repetitions.append(row)
 
-    return row
+    return all_repetitions
 
 
 def run_apply_async_multiprocessing(func, argument_list, num_processes):
@@ -128,29 +132,30 @@ if __name__ == '__main__':
     Path(args.path).mkdir(parents=True, exist_ok=True)
 
     path = args.path
-    #n_agents = 100
+    # n_agents = 100
     n_states = 1
     n_actions = 3
     n_iter = 10000
-    #epsilon = "variable"
-    #alpha = "variable"
+    # epsilon = "variable"
+    # alpha = 0.1
     gamma = 0
     q_initial = "UNIFORM"
     qmin = -2
     qmax = -1
-    #cost = "variable"
+    # cost = 0
+    repetitions = 40
 
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
-    for epsilon in ["DECAYED"]:  # total 30 list(np.linspace(0, 0.2, 21))+list(np.linspace(0.3, 1, 8))+
+    for epsilon in list(np.linspace(0, 0.2, 21))+list(np.linspace(0.3, 1, 8)) + ["DECAYED"]:  #
         for alpha in np.linspace(0.01, 0.2, 11):
             for cost in np.linspace(0, 0.5, 11):
                 for n_agents in [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
-                    for i in range(40):
-                        parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
-                        argument_list.append(parameter_tuple)
+                    parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
+                    argument_list.append(parameter_tuple)
     results = run_apply_async_multiprocessing(main, argument_list=argument_list, num_processes=num_cpus)
 
+    utilities.save_pickle_with_unique_filename(results, "results.pkl")
     name = f"results.csv"
     unique_name = utilities.get_unique_filename(base_filename=name)
     results_df = pd.DataFrame(results)
