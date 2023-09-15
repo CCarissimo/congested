@@ -142,7 +142,7 @@ if __name__ == '__main__':
 
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
-    for epsilon in list(np.linspace(0, 0.2, 21))+list(np.linspace(0.3, 1, 8))+["DECAYED"]:  # total 30
+    for epsilon in ["DECAYED"]:  # total 30 list(np.linspace(0, 0.2, 21))+list(np.linspace(0.3, 1, 8))+
         for alpha in np.linspace(0.01, 0.2, 11):
             for cost in np.linspace(0, 0.5, 11):
                 for n_agents in [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
