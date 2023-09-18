@@ -56,9 +56,11 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
             action1 = A[0]
         else:
             action2 = A[1]
-        R, S = duopoly(action1, action2)
 
-        Q, sum_of_belief_updates = bellman_update_q_table(Q, S, A, R, alpha, gamma)
+        R, S = duopoly(action1, action2, n_actions)
+
+        new_Q, sum_of_belief_updates = bellman_update_q_table(Q, S, A, R, alpha, gamma)
+        Q[t % 2] = new_Q[t % 2]
 
         ## SAVE PROGRESS DATA
         data[t] = {
