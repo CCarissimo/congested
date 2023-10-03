@@ -29,7 +29,7 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
     for t in range(n_iter):
         epsilon = (eps_end + (eps_start - eps_end) * math.exp(-1. * t / eps_decay))  # if t < N_ITER/10 else 0
         A = e_greedy_select_action(Q, S, epsilon)
-        R, _ = two_route_game(A)
+        R, _ = two_route_game(A, cost=cost)
         Q, sum_of_belief_updates = bellman_update_q_table(Q, S, A, R, alpha, gamma)
 
         ## SAVE PROGRESS DATA
@@ -141,7 +141,7 @@ if __name__ == '__main__':
                     argument_list.append(parameter_tuple)
     results = run_apply_async_multiprocessing(main, argument_list=argument_list, num_processes=num_cpus)
 
-    utilities.save_pickle_with_unique_filename(results, "results.pkl")
+    utilities.save_pickle_with_unique_filename(results, f"{path}/results.pkl")
     name = f"braess_augmented_results.csv"
     unique_name = utilities.get_unique_filename(base_filename=name)
     results_df = pd.DataFrame(results)
