@@ -1,13 +1,11 @@
-import numpy as np
 from tqdm.auto import tqdm
-import pickle
 import nolds
 import pandas as pd
-from routing_networks import two_route_game
-from run_functions import *
-from agent_functions import *
+from learning_in_games.games import two_route_game
+from learning_in_games.run_functions import *
+from learning_in_games.agent_functions import *
 from pathlib import Path
-import utilities
+from learning_in_games import utilities
 import math
 
 

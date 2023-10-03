@@ -1,6 +1,5 @@
-import numpy as np
-from run_functions import *
-from agent_functions import *
+from learning_in_games.run_functions import *
+from learning_in_games.agent_functions import *
 import math
 
 def single_run(game, n_agents, n_states, n_actions, n_iter, epsilon, gamma, alpha, q_initial, qmin, qmax, kwargs):
@@ -37,9 +36,9 @@ def single_run(game, n_agents, n_states, n_actions, n_iter, epsilon, gamma, alph
 
 
 if __name__ == "__main__":
-    from routing_networks import braess_augmented_network, braess_initial_network
-    from recommenders import heuristic_recommender, constant_recommender
-    from plot_functions import plot_run
+    from learning_in_games.games import braess_initial_network
+    from recommenders import constant_recommender
+    from learning_in_games.plot_functions import plot_run
 
     N_AGENTS = 100
     N_STATES = 3

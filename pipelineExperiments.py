@@ -3,10 +3,10 @@ import tqdm
 import pickle
 import nolds
 import pandas as pd
-from recommenders import heuristic_recommender, naive_recommender, random_recommender, constant_recommender, optimized_heuristic_recommender, aligned_heuristic_recommender
+from recommenders import random_recommender, constant_recommender, optimized_heuristic_recommender, aligned_heuristic_recommender
 from single_run import single_run
-from routing_networks import braess_augmented_network
-from run_functions import calculate_alignment
+from learning_in_games.games import braess_augmented_network
+
 
 def main(epsilon):
     
