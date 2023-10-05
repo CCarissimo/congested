@@ -15,6 +15,12 @@ class gameConfig:
 
 
 @dataclass
+class epsilonConfig:
+    method: str
+    parameter: float
+
+
+@dataclass
 class agentConfig:
     alpha: float
     gamma: float
