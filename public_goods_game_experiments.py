@@ -123,8 +123,8 @@ def main(path, n_repetitions, n_iter):
     x_values = np.linspace(0, 1, 101)
     # y_values = np.linspace(0, 1, 21)
     argument_list = []
-    for x in tqdm(x_values):
-        # for y in tqdm(y_values):
+    for x in x_values:
+        # for y in y_values:
         game_config = gameConfig(
             n_agents=2, n_actions=3, n_states=1, m=0.9, beta=1
         )
