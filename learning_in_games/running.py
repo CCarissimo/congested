@@ -2,7 +2,7 @@ import numpy as np
 import scipy.cluster
 from tqdm.auto import tqdm
 import multiprocessing as mp
-
+import math
 
 def initialize_q_table(q_initial, n_agents, n_states, n_actions, qmin=0, qmax=1):
     if type(q_initial) == np.ndarray:
@@ -31,12 +31,23 @@ def initialize_learning_rates(alpha, n_agents):
     return alpha
 
 
-def initialize_exploration_rates(epsilon, n_agents, mask=1):  # default mask 1 leads to no change
-    if epsilon == "UNIFORM":
-        epsilon = np.random.random_sample(size=n_agents) * mask
+def initialize_exploration_rates(game, agent, n_agents):  # default mask 1 leads to no change
+    # if the policy is epsilon greedy
+    if agent.epsilon == "DECAYED":
+        exp_start = 1
+        exp_end = 0
+        exp_decay = game.n_iter / 8
     else:
-        epsilon = epsilon * np.ones(n_agents) * mask
-    return epsilon
+        exp_start = agent.epsilon
+        exp_end = agent.epsilon
+        exp_decay = 1
+
+    return exp_start, exp_end, exp_decay
+
+
+def update_exploration_rates(t, n_iter, exp_start=1, exp_end=0):
+    exp_decay = n_iter/8
+    return exp_end + (exp_start - exp_end) * math.exp(-1. * t / exp_decay)
 
 
 def welfare(R, N_AGENTS, welfareType="AVERAGE"):
