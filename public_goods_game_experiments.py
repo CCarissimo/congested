@@ -72,12 +72,12 @@ def run_public_goods_game(n_iter, game, agent):
                 "sum_of_belief_updates": sum_of_belief_updates,
                 "epsilon": EPSILON
                 }
-    return M, elist
+    return M
 
 
 def parallel_function(path, n_repetitions, n_iter, game_function, game_config, agent):
     precision = 3
-    path_to_experiment = f"{path}/m{game_config.m:.{precision}}_beta{game_config.beta:.{precision}}"
+    path_to_experiment = f"{path}/e{agent.epsilon:.{precision}f}"
     if not os.path.isdir(path_to_experiment):
         os.mkdir(path_to_experiment)
 
@@ -103,6 +103,13 @@ def parallel_function(path, n_repetitions, n_iter, game_function, game_config, a
     return results
 
 
+def flatten_extend(matrix):
+    flat_list = []
+    for row in matrix:
+        flat_list.extend(row)
+    return flat_list
+
+
 def main(path, n_repetitions, n_iter):
     import pandas as pd
     import multiprocessing as mp
@@ -113,24 +120,25 @@ def main(path, n_repetitions, n_iter):
     num_cpus = mp.cpu_count()  # int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
 
     game_function = run_public_goods_game  # references the function specified above to run the game
-    x_values = np.linspace(0.5, 1, 21)
-    y_values = np.linspace(0.5, 1.5, 21)
+    x_values = np.linspace(0, 1, 101)
+    # y_values = np.linspace(0, 1, 21)
     argument_list = []
     for x in tqdm(x_values):
-        for y in tqdm(y_values):
-            game_config = gameConfig(
-                n_agents=2, n_actions=3, n_states=1, m=x, beta=y
-            )
-            agent_config = agentConfig(
-                alpha=0.1, gamma=0, qinit="UNIFORM", epsilon="DECAYED"
-            )
-            parameter_tuple = (
-                path, n_repetitions, n_iter, game_function, game_config, agent_config
-            )
-            argument_list.append(parameter_tuple)
+        # for y in tqdm(y_values):
+        game_config = gameConfig(
+            n_agents=2, n_actions=3, n_states=1, m=0.9, beta=1
+        )
+        agent_config = agentConfig(
+            alpha=0.1, gamma=0, qinit="UNIFORM", epsilon=x
+        )
+        parameter_tuple = (
+            path, n_repetitions, n_iter, game_function, game_config, agent_config
+        )
+        argument_list.append(parameter_tuple)
 
     results = run_apply_async_multiprocessing(parallel_function, argument_list=argument_list, num_processes=num_cpus)
 
+    results = flatten_extend(results)  # ensure results are flat
     save_pickle_with_unique_filename(results, f"{path}/results.pkl")
     df = pd.DataFrame(results)
     df.to_csv(path + "/results.csv")
