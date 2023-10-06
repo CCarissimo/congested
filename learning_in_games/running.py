@@ -1,8 +1,5 @@
-import multiprocessing as mp
-
 import numpy as np
 import scipy.cluster
-from tqdm.auto import tqdm
 
 
 def initialize_q_table(q_initial, n_agents, n_states, n_actions, qmin=0, qmax=1):
@@ -69,22 +66,3 @@ def calculate_alignment(q_table, recommendation, actions):
     recommendation_alignment = (recommendation == argmax_q_table[np.arange(q_table.shape[0]), recommendation]).mean()
     action_alignment = (recommendation==actions).mean()
     return belief_alignment, recommendation_alignment, action_alignment
-
-
-def run_apply_async_multiprocessing(func, argument_list, num_processes=None):
-    if num_processes:
-        pool = mp.Pool(processes=num_processes)
-    else:
-        pool = mp.Pool(processes=mp.cpu_count())
-
-    jobs = [
-        pool.apply_async(func=func, args=(*argument,)) if isinstance(argument, tuple) else pool.apply_async(func=func,
-                                                                                                            args=(
-                                                                                                            argument,))
-        for argument in argument_list]
-    pool.close()
-    result_list_tqdm = []
-    for job in tqdm(jobs):
-        result_list_tqdm.append(job.get())
-
-    return result_list_tqdm
