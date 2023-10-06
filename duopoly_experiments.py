@@ -1,8 +1,8 @@
 from tqdm.auto import tqdm
 import nolds
 import pandas as pd
-from learning_in_games.run_functions import *
-from learning_in_games.agent_functions import *
+from learning_in_games.running import *
+from learning_in_games.agents import *
 from pathlib import Path
 from learning_in_games import utilities
 import math

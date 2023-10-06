@@ -1,8 +1,6 @@
 import os
 import pickle
 import numpy as np
-import multiprocessing as mp
-from tqdm.auto import tqdm
 
 
 def get_unique_filename(base_filename):
@@ -29,20 +27,3 @@ def save_numpy_array_with_unique_filename(data, filename):
     np.save(unique_filename, data)
 
 
-def run_apply_async_multiprocessing(func, argument_list, num_processes=None):
-    if num_processes:
-        pool = mp.Pool(processes=num_processes)
-    else:
-        pool = mp.Pool(processes=mp.cpu_count())
-
-    jobs = [
-        pool.apply_async(func=func, args=(*argument,)) if isinstance(argument, tuple) else pool.apply_async(func=func,
-                                                                                                            args=(
-                                                                                                            argument,))
-        for argument in argument_list]
-    pool.close()
-    result_list_tqdm = []
-    for job in tqdm(jobs):
-        result_list_tqdm.append(job.get())
-
-    return result_list_tqdm

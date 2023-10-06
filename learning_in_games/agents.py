@@ -48,4 +48,3 @@ def average_rolled_q_tables(Q, neighborhood):
     tmp_Q = np.array([np.roll(Q, shift=i, axis=0) for i in range(neighborhood)])
     Q = np.mean(tmp_Q, axis=0)
     return Q
-

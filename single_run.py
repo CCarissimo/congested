@@ -1,6 +1,7 @@
-from learning_in_games.run_functions import *
-from learning_in_games.agent_functions import *
+from learning_in_games.running import *
+from learning_in_games.agents import *
 import math
+
 
 def single_run(game, n_agents, n_states, n_actions, n_iter, epsilon, gamma, alpha, q_initial, qmin, qmax, kwargs):
     Q = initialize_q_table(q_initial, n_agents, n_states, n_actions, qmin, qmax)
@@ -38,7 +39,7 @@ def single_run(game, n_agents, n_states, n_actions, n_iter, epsilon, gamma, alph
 if __name__ == "__main__":
     from learning_in_games.games import braess_initial_network
     from recommenders import constant_recommender
-    from learning_in_games.plot_functions import plot_run
+    from learning_in_games.plotting import plot_run
 
     N_AGENTS = 100
     N_STATES = 3
