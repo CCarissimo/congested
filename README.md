@@ -54,3 +54,4 @@ what are the features of the package that are most important?
   - [ ] try flake8
   - [ ] use twine for publishing to pypi
   - [ ] sign up and upload to pypi
+- [ ] remove old comitted files from git, and transition to main branch as center for the package
