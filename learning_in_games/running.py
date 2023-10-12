@@ -4,6 +4,7 @@ from tqdm.auto import tqdm
 import multiprocessing as mp
 import math
 
+
 def initialize_q_table(q_initial, n_agents, n_states, n_actions, qmin=0, qmax=1):
     if type(q_initial) == np.ndarray:
         if q_initial.shape == (n_agents, n_states, n_actions):
@@ -11,7 +12,7 @@ def initialize_q_table(q_initial, n_agents, n_states, n_actions, qmin=0, qmax=1)
         else:
             q_table = q_initial.T * np.ones((n_agents, n_states, n_actions))
     elif q_initial == "UNIFORM":
-        q_table = (qmax-qmin)*np.random.random_sample(size=(n_agents, n_states, n_actions)) + qmin
+        q_table = (qmax - qmin) * np.random.random_sample(size=(n_agents, n_states, n_actions)) + qmin
     elif q_initial == "ALIGNED":
         if n_actions == 3:
             q_table = np.array([[-1, -2, -2], [-2, -1, -2], [-2, -2, -1]]).T * np.ones((n_agents, n_states, n_actions))
@@ -46,7 +47,7 @@ def initialize_exploration_rates(game, agent, n_agents):  # default mask 1 leads
 
 
 def update_exploration_rates(t, n_iter, exp_start=1, exp_end=0):
-    exp_decay = n_iter/8
+    exp_decay = n_iter / 8
     return exp_end + (exp_start - exp_end) * math.exp(-1. * t / exp_decay)
 
 
@@ -75,9 +76,10 @@ def count_groups(q_values, dist):
 
 def calculate_alignment(q_table, recommendation, actions):
     argmax_q_table = np.argmax(q_table, axis=2)
-    belief_alignment = (argmax_q_table == np.broadcast_to(np.arange(q_table.shape[2]), (q_table.shape[0], q_table.shape[1]))).mean(axis=0)
+    belief_alignment = (argmax_q_table == np.broadcast_to(np.arange(q_table.shape[2]),
+                                                          (q_table.shape[0], q_table.shape[1]))).mean(axis=0)
     recommendation_alignment = (recommendation == argmax_q_table[np.arange(q_table.shape[0]), recommendation]).mean()
-    action_alignment = (recommendation==actions).mean()
+    action_alignment = (recommendation == actions).mean()
     return belief_alignment, recommendation_alignment, action_alignment
 
 
@@ -90,7 +92,7 @@ def run_apply_async_multiprocessing(func, argument_list, num_processes=None):
     jobs = [
         pool.apply_async(func=func, args=(*argument,)) if isinstance(argument, tuple) else pool.apply_async(func=func,
                                                                                                             args=(
-                                                                                                            argument,))
+                                                                                                                argument,))
         for argument in argument_list]
     pool.close()
     result_list_tqdm = []

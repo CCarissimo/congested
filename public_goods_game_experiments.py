@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 import math
 import os
+from typing import Union
 
 
 @dataclass
@@ -24,8 +25,8 @@ class epsilonConfig:
 class agentConfig:
     alpha: float
     gamma: float
-    qinit: np.ndarray or str
-    epsilon: float or str
+    qinit: Union[np.ndarray, str]
+    epsilon: Union[float, str]
 
 
 def public_goods_game(A, config):

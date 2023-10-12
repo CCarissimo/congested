@@ -96,3 +96,7 @@ def plot_run(M, NAME, n_agents, n_actions, n_iter):
     # fig.legend(labels=a_labels, labelcolor=colors)
     plt.savefig(NAME + ".png")
     plt.show()
+
+
+if __name__ == "__main__":
+    pass
