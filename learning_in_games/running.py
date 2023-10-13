@@ -3,52 +3,7 @@ import scipy.cluster
 from tqdm.auto import tqdm
 import multiprocessing as mp
 import math
-
-
-def initialize_q_table(q_initial, n_agents, n_states, n_actions, qmin=0, qmax=1):
-    if type(q_initial) == np.ndarray:
-        if q_initial.shape == (n_agents, n_states, n_actions):
-            q_table = q_initial
-        else:
-            q_table = q_initial.T * np.ones((n_agents, n_states, n_actions))
-    elif q_initial == "UNIFORM":
-        q_table = (qmax - qmin) * np.random.random_sample(size=(n_agents, n_states, n_actions)) + qmin
-    elif q_initial == "ALIGNED":
-        if n_actions == 3:
-            q_table = np.array([[-1, -2, -2], [-2, -1, -2], [-2, -2, -1]]).T * np.ones((n_agents, n_states, n_actions))
-        elif n_actions == 2:
-            q_table = np.array([[-1, -2], [-2, -1]]).T * np.ones((n_agents, n_states, n_actions))
-    elif q_initial == "MISALIGNED":
-        if n_actions == 3:
-            q_table = np.array([[-2, -1, -2], [-2, -2, -1], [-1, -2, -2]]).T * np.ones((n_agents, n_states, n_actions))
-        elif n_actions == 2:
-            q_table = np.array([[-2, -1], [-1, -2]]).T * np.ones((n_agents, n_states, n_actions))
-    return q_table
-
-
-def initialize_learning_rates(alpha, n_agents):
-    if alpha == "UNIFORM":
-        alpha = np.random.random_sample(size=n_agents)
-    return alpha
-
-
-def initialize_exploration_rates(game, agent, n_agents):  # default mask 1 leads to no change
-    # if the policy is epsilon greedy
-    if agent.epsilon == "DECAYED":
-        exp_start = 1
-        exp_end = 0
-        exp_decay = game.n_iter / 8
-    else:
-        exp_start = agent.epsilon
-        exp_end = agent.epsilon
-        exp_decay = 1
-
-    return exp_start, exp_end, exp_decay
-
-
-def update_exploration_rates(t, n_iter, exp_start=1, exp_end=0):
-    exp_decay = n_iter / 8
-    return exp_end + (exp_start - exp_end) * math.exp(-1. * t / exp_decay)
+from .games import GameConfig
 
 
 def welfare(R, N_AGENTS, welfareType="AVERAGE"):
