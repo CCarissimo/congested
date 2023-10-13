@@ -36,7 +36,7 @@ what are the features of the package that are most important?
     - network congestion games take parameters for each edge
   - multiprocessing sweeps to know necessary parameters
   - plotting of relevant variables and parameters after simulation
-- [ ] documentation of important functions
+- [x] documentation of important functions
   - game functions and dataclasses
   - agent functions
   - plotting functions
@@ -54,4 +54,4 @@ what are the features of the package that are most important?
   - [ ] try flake8
   - [ ] use twine for publishing to pypi
   - [ ] sign up and upload to pypi
-- [ ] remove old comitted files from git, and transition to main branch as center for the package
+- [ ] remove old committed files from git, and transition to main branch as center for the package
