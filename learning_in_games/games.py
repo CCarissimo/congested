@@ -18,7 +18,7 @@ class RouteConfig(GameConfig):
     cost: float
 
 
-def braess_augmented_network(actions, config: RouteConfig):
+def braess_augmented_network(actions, n_agents, cost):
     """
     Network from the Braess Paradox with the added link, and the Nash Equilibrium average travel time is 2,
     but the optimal average travel time is 1.5: and no players take the added link.
@@ -26,19 +26,18 @@ def braess_augmented_network(actions, config: RouteConfig):
     :param config: dataclass of parameters for the game
     :return:
     """
-    n_agents = config.n_agents
     n_up = (actions == 0).sum()
     n_down = (actions == 1).sum()
     n_cross = (actions == 2).sum()
 
     r_0 = 1 + (n_up + n_cross) / n_agents
     r_1 = 1 + (n_down + n_cross) / n_agents
-    r_2 = (n_up + n_cross) / n_agents + (n_down + n_cross) / n_agents + config.cost
+    r_2 = (n_up + n_cross) / n_agents + (n_down + n_cross) / n_agents + cost
 
     T = np.array([-r_0, -r_1, -r_2])
     R = T[actions]
     S = None
-    return R, S
+    return R, S, T
 
 
 def braess_initial_network(actions, config: RouteConfig):

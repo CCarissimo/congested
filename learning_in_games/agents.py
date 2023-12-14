@@ -12,24 +12,24 @@ class QAgentConfig:
     qinit: Union[np.ndarray]  # initial q-values
 
 
-def initialize_q_table(q_input, gameConfig: GameConfig, qmin=0, qmax=1):
+def initialize_q_table(q_input, n_agents, n_states, n_actions, qmin=0, qmax=1):
     if type(q_input) == np.ndarray:
-        if q_input.shape == (gameConfig.n_agents, gameConfig.n_states, gameConfig.n_actions):
+        if q_input.shape == (n_agents, n_states, n_actions):
             q_table = q_input
         else:
-            q_table = q_input.T * np.ones((gameConfig.n_agents, gameConfig.n_states, gameConfig.n_actions))
+            q_table = q_input.T * np.ones((n_agents, n_states, n_actions))
     elif q_input == "UNIFORM":
-        q_table = (qmax - qmin) * np.random.random_sample(size=(gameConfig.n_agents, gameConfig.n_states, gameConfig.n_actions)) + qmin
+        q_table = (qmax - qmin) * np.random.random_sample(size=(n_agents, n_states, n_actions)) + qmin
     elif q_input == "ALIGNED":
-        if gameConfig.n_actions == 3:
-            q_table = np.array([[-1, -2, -2], [-2, -1, -2], [-2, -2, -1]]).T * np.ones((gameConfig.n_agents, gameConfig.n_states, gameConfig.n_actions))
-        elif gameConfig.n_actions == 2:
-            q_table = np.array([[-1, -2], [-2, -1]]).T * np.ones((gameConfig.n_agents, gameConfig.n_states, gameConfig.n_actions))
+        if n_actions == 3:
+            q_table = np.array([[-1, -2, -2], [-2, -1, -2], [-2, -2, -1]]).T * np.ones((n_agents, n_states, n_actions))
+        elif n_actions == 2:
+            q_table = np.array([[-1, -2], [-2, -1]]).T * np.ones((n_agents, n_states, n_actions))
     elif q_input == "MISALIGNED":
-        if gameConfig.n_actions == 3:
-            q_table = np.array([[-2, -1, -2], [-2, -2, -1], [-1, -2, -2]]).T * np.ones((gameConfig.n_agents, gameConfig.n_states, gameConfig.n_actions))
-        elif gameConfig.n_actions == 2:
-            q_table = np.array([[-2, -1], [-1, -2]]).T * np.ones((gameConfig.n_agents, gameConfig.n_states, gameConfig.n_actions))
+        if n_actions == 3:
+            q_table = np.array([[-2, -1, -2], [-2, -2, -1], [-1, -2, -2]]).T * np.ones((n_agents, n_states, n_actions))
+        elif n_actions == 2:
+            q_table = np.array([[-2, -1], [-1, -2]]).T * np.ones((n_agents, n_states, n_actions))
     return q_table
 
 
@@ -43,12 +43,12 @@ def initialize_learning_rates(agentConfig: QAgentConfig, gameConfig: GameConfig)
         return agentConfig
 
 
-def initialize_exploration_rates(gameConfig, agentConfig):  # default mask 1 leads to no change
+def initialize_exploration_rates(n_iter, gameConfig, agentConfig):  # default mask 1 leads to no change
     # if the policy is epsilon greedy
     if agentConfig.epsilon == "DECAYED":
         exp_start = 1
         exp_end = 0
-        exp_decay = gameConfig.n_iter / 8
+        exp_decay = n_iter / 8
     else:
         exp_start = agentConfig.epsilon
         exp_end = agentConfig.epsilon
@@ -57,14 +57,15 @@ def initialize_exploration_rates(gameConfig, agentConfig):  # default mask 1 lea
     return exp_start, exp_end, exp_decay
 
 
-def update_exploration_rates(t, n_iter, exp_start=1, exp_end=0):
-    exp_decay = n_iter / 8
+def update_exploration_rates(t, n_iter, exp_start=1, exp_end=0, exp_decay_factor=8):
+    exp_decay = n_iter / exp_decay_factor
     return exp_end + (exp_start - exp_end) * math.exp(-1. * t / exp_decay)
 
 
-def bellman_update_q_table(Q, S, A, R, S_, agentConfig: QAgentConfig):
+def bellman_update_q_table(ind, Q, S, A, R, S_, alpha, gamma):
     """
     Performs a one-step update using the bellman update equation for Q-learning.
+    :param ind: the indices of agents to update for, must match shapes of other arrays
     :param agentConfig:
     :param Q: np.ndarray Q-table indexed by (agents, states, actions)
     :param S: np.ndarray States indexed by (agents)
@@ -73,9 +74,9 @@ def bellman_update_q_table(Q, S, A, R, S_, agentConfig: QAgentConfig):
     :param S_: np.ndarray Next States indexed by (agents)
     :return: np.ndarray Q-table indexed by (agents, states, actions)
     """
-    ind = np.arange(len(S))
-    all_belief_updates = agentConfig.alpha * (R + agentConfig.gamma * Q[ind, S_].max(axis=1) - Q[ind, S, A])
-    Q[ind, S, A] = Q[ind, S, A] + all_belief_updates
+    # print(ind, Q[ind, S[ind], A[ind]], S[ind], A[ind], R[ind], S_[ind], Q[ind, S_[ind]].shape)
+    all_belief_updates = alpha * (R[ind] + gamma * Q[ind, S_[ind]].max(axis=2) - Q[ind, S[ind], A[ind]])
+    Q[ind, S[ind], A[ind]] = Q[ind, S[ind], A[ind]] + all_belief_updates
     return Q, np.abs(all_belief_updates).sum()
 
 
@@ -84,7 +85,7 @@ class EpsilonGreedyConfig(QAgentConfig):
     epsilon: Union[float, str]
 
 
-def e_greedy_select_action(Q, S, agentConfig: EpsilonGreedyConfig):
+def e_greedy_select_action(Q, S, epsilon):
     """
     Select actions based on an epsilon greedy policy. Epsilon determines the probability with which
     an action is selected at random. Otherwise, the action is selected as the argmax of the state.
@@ -97,7 +98,7 @@ def e_greedy_select_action(Q, S, agentConfig: EpsilonGreedyConfig):
     indices = np.arange(len(S))
     rand = np.random.random_sample(size=len(S))
     randA = np.random.randint(len(Q[0, 0, :]), size=len(S))
-    A = np.where(rand >= agentConfig.epsilon,
+    A = np.where(rand >= epsilon,
                  np.argmax(Q[indices, S, :], axis=1),
                  randA)
     return A

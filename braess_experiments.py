@@ -9,9 +9,9 @@ from learning_in_games import utilities
 import math
 
 
-def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost):
+def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_parameter):
     Q = initialize_q_table(q_initial, n_agents, n_states, n_actions, qmin, qmax)
-    alpha = initialize_learning_rates(alpha, n_agents)
+    # alpha = initialize_learning_rates(alpha, n_agents)
     eps_decay = n_iter / 8
     if epsilon == "DECAYED":
         eps_start = 1
@@ -20,39 +20,42 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
         eps_start = epsilon
         eps_end = epsilon
 
-    ind = np.arange(n_agents)
+    all_agent_indices = np.arange(n_agents)
     S = np.random.randint(n_states, size=n_agents)
 
     data = {}
     for t in range(n_iter):
         epsilon = (eps_end + (eps_start - eps_end) * math.exp(-1. * t / eps_decay))  # if t < N_ITER/10 else 0
         A = e_greedy_select_action(Q, S, epsilon)
-        R, _ = braess_augmented_network(A, cost=cost)
-        Q, sum_of_belief_updates = bellman_update_q_table(Q, S, A, R, alpha, gamma)
+        R, _, _ = braess_augmented_network(A, n_agents, cost)
+
+        random_vector = np.random.randint(0, high=delay_parameter, size=n_agents)
+        indices_to_update = np.where(random_vector == 0)
+
+        Q, sum_of_belief_updates = bellman_update_q_table(indices_to_update, Q, S, A, R, S, alpha, gamma)
 
         ## SAVE PROGRESS DATA
         data[t] = {
                    "R": R,
                    "Qmean": Q.mean(axis=1).mean(axis=0),
                    # "groups": count_groups(Q[ind, S, :], 0.1),
-                   "Qvar": Q[ind, S, :].var(axis=0),
+                   "Qvar": Q[all_agent_indices, S, :].var(axis=0),
                    # "A": A,
-                   # "Q": Q,
+                   "Q": Q,
                    }
     return data
 
 
-def main(path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost):
+def main(path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_parameter):
     all_repetitions = []
     for i in range(repetitions):
-        M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
-        # experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}"
-        # Path(f"{path}/{experiment_name}").mkdir(parents=True, exist_ok=True)
-        #
-        # all_q_tables = np.stack([M[t]["Q"] for t in M.keys()])
-        # utilities.save_numpy_array_with_unique_filename(all_q_tables, f"{path}/{experiment_name}/q_tables.npy")
-        # all_rewards = np.stack([M[t]["R"] for t in M.keys()])
-        # utilities.save_numpy_array_with_unique_filename(all_rewards, f"{path}/{experiment_name}/rewards.npy")
+        M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_parameter)
+        experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}_d{delay_parameter}"
+        Path(f"{path}/{experiment_name}").mkdir(parents=True, exist_ok=True)
+        all_q_tables = np.stack([M[t]["Q"] for t in M.keys()])
+        utilities.save_numpy_array_with_unique_filename(all_q_tables, f"{path}/{experiment_name}/q_tables_{i}.npy")
+        all_rewards = np.stack([M[t]["R"] for t in M.keys()])
+        utilities.save_numpy_array_with_unique_filename(all_rewards, f"{path}/{experiment_name}/rewards_{i}.npy")
         # all_actions = np.stack([M[t]["A"] for t in M.keys()])
         # utilities.save_numpy_array_with_unique_filename(all_actions, f"{path}/{experiment_name}/actions.npy")
 
@@ -75,6 +78,7 @@ def main(path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alph
             "alpha": alpha,
             "epsilon": epsilon,
             "cost": cost,
+            "delay": delay_parameter,
             "T_mean": T,
             "T_mean_all": T_all,
             "T_std": T_std,
@@ -130,30 +134,27 @@ if __name__ == '__main__':
     Path(args.path).mkdir(parents=True, exist_ok=True)
 
     path = args.path
-    # n_agents = 100
+    n_agents = 100
     n_states = 1
     n_actions = 3
-    n_iter = 10000
-    # epsilon = "variable"
-    # alpha = 0.1
+    n_iter = 100000
+    epsilon = 0.01
+    alpha = 0.1
     gamma = 0
     q_initial = "UNIFORM"
     qmin = -2
     qmax = -1
-    # cost = 0
-    repetitions = 40
+    cost = 0
+    repetitions = 1
 
-    num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
+    num_cpus = mp.cpu_count()-10  # int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
-    for epsilon in list(np.linspace(0, 0.2, 21))+list(np.linspace(0.3, 1, 8)) + ["DECAYED"]:  #
-        for alpha in np.linspace(0.01, 0.2, 11):
-            for cost in np.linspace(0, 0.5, 11):
-                for n_agents in [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
-                    parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost)
-                    argument_list.append(parameter_tuple)
+    for delay_parameter in np.arange(1, 2):
+        parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_parameter)
+        argument_list.append(parameter_tuple)
     results = run_apply_async_multiprocessing(main, argument_list=argument_list, num_processes=num_cpus)
 
-    utilities.save_pickle_with_unique_filename(results, "results.pkl")
+    utilities.save_pickle_with_unique_filename(results, f"{path}/results.pkl")
     name = f"results.csv"
     unique_name = utilities.get_unique_filename(base_filename=name)
     results_df = pd.DataFrame(results)
