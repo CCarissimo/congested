@@ -145,11 +145,11 @@ if __name__ == '__main__':
     qmin = -2
     qmax = -1
     cost = 0
-    repetitions = 1
+    repetitions = 40
 
-    num_cpus = mp.cpu_count()-10  # int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
+    num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
-    for delay_parameter in np.arange(1, 2):
+    for delay_parameter in np.arange(1, 101):
         parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_parameter)
         argument_list.append(parameter_tuple)
     results = run_apply_async_multiprocessing(main, argument_list=argument_list, num_processes=num_cpus)
