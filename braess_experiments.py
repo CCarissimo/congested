@@ -9,7 +9,17 @@ from learning_in_games import utilities
 import math
 
 
-def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_parameter):
+def get_update_indices(step, method, n_agents, uniform_size, fixed_delay, initial_vector):
+    if method == "uniform_random":
+        random_vector = np.random.randint(0, high=uniform_size, size=n_agents)
+        indices_to_update = np.where(random_vector == 0)
+        return indices_to_update
+    elif method == "fixed":
+        indices_to_update = np.where((initial_vector - step) % fixed_delay == 0)
+        return indices_to_update
+
+
+def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_method, delay_parameter, fixed_delay):
     Q = initialize_q_table(q_initial, n_agents, n_states, n_actions, qmin, qmax)
     # alpha = initialize_learning_rates(alpha, n_agents)
     eps_decay = n_iter / 8
@@ -22,6 +32,7 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
 
     all_agent_indices = np.arange(n_agents)
     S = np.random.randint(n_states, size=n_agents)
+    initial_vector = np.random.randint(0, high=delay_parameter, size=n_agents)
 
     data = {}
     for t in range(n_iter):
@@ -29,8 +40,12 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
         A = e_greedy_select_action(Q, S, epsilon)
         R, _, _ = braess_augmented_network(A, n_agents, cost)
 
-        random_vector = np.random.randint(0, high=delay_parameter, size=n_agents)
-        indices_to_update = np.where(random_vector == 0)
+        indices_to_update = get_update_indices(t,
+                                               delay_method,
+                                               n_agents,
+                                               uniform_size=delay_parameter,
+                                               fixed_delay=fixed_delay,
+                                               initial_vector=initial_vector)
 
         Q, sum_of_belief_updates = bellman_update_q_table(indices_to_update, Q, S, A, R, S, alpha, gamma)
 
@@ -46,7 +61,7 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
     return data
 
 
-def main(path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_parameter):
+def main(path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_method, delay_parameter, fixed_delay):
     all_repetitions = []
     for i in range(repetitions):
         M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_parameter)
@@ -61,9 +76,10 @@ def main(path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alph
 
         exclusion_threshold = 0.8
         W = [M[t]["R"].mean() for t in range(0, n_iter)]
-        # L = nolds.lyap_r(W)
+        L = nolds.lyap_r(W)
         T = np.mean(W[int(exclusion_threshold * n_iter):n_iter])
         T_all = np.mean(W)
+        median = np.median(W[int(exclusion_threshold * n_iter):n_iter])
         T_std = np.std(W[int(exclusion_threshold * n_iter):n_iter])
 
         # groups = [M[t]["groups"] for t in range(0, n_iter)]
@@ -79,10 +95,12 @@ def main(path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alph
             "epsilon": epsilon,
             "cost": cost,
             "delay": delay_parameter,
+            "fixed_delay": fixed_delay,
             "T_mean": T,
             "T_mean_all": T_all,
             "T_std": T_std,
-            # "Lyapunov": L,
+            "Lyapunov": L,
+            "median": median,
             # "groups_mean": groups_mean,
             # "groups_var": groups_var,
             "Qvar_mean": Qvar_mean,
@@ -146,11 +164,15 @@ if __name__ == '__main__':
     qmax = -1
     cost = 0
     repetitions = 1
+    delay_method = "uniform_random"
+    fixed_delay = 0
+
 
     num_cpus = mp.cpu_count()-10  # int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
     for delay_parameter in np.arange(1, 2):
-        parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_parameter)
+        parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial,
+                           qmin, qmax, cost, delay_method, delay_parameter, fixed_delay)
         argument_list.append(parameter_tuple)
     results = run_apply_async_multiprocessing(main, argument_list=argument_list, num_processes=num_cpus)
 
