@@ -75,7 +75,7 @@ def bellman_update_q_table(ind, Q, S, A, R, S_, alpha, gamma):
     :return: np.ndarray Q-table indexed by (agents, states, actions)
     """
     # print(ind, Q[ind, S[ind], A[ind]], S[ind], A[ind], R[ind], S_[ind], Q[ind, S_[ind]].shape)
-    all_belief_updates = alpha * (R[ind] + gamma * Q[ind, S_[ind]].max(axis=2) - Q[ind, S[ind], A[ind]])
+    all_belief_updates = alpha * (R[ind] + gamma * Q[ind, S_[ind]].max(axis=1) - Q[ind, S[ind], A[ind]])
     Q[ind, S[ind], A[ind]] = Q[ind, S[ind], A[ind]] + all_belief_updates
     return Q, np.abs(all_belief_updates).sum()
 
