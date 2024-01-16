@@ -84,12 +84,15 @@ def main(config: AlphaExperimentConfig):
         # utilities.save_numpy_array_with_unique_filename(all_actions, f"{path}/{experiment_name}/actions.npy")
 
         exclusion_threshold = 0.8
-        W = [M[t]["R"].mean() for t in range(0, config.n_iter)]
+        W = np.array([M[t]["R"].mean() for t in range(0, config.n_iter)])
         # L = nolds.lyap_r(W)
         T = np.mean(W[int(exclusion_threshold * config.n_iter):config.n_iter])
         T_all = np.mean(W)
         median = np.median(W[int(exclusion_threshold * config.n_iter):config.n_iter])
         T_std = np.std(W[int(exclusion_threshold * config.n_iter):config.n_iter])
+
+        user0 = np.array([-M[t]["R"][0].mean() for t in M.keys()])
+        deviation_gain = W - user0
 
         # groups = [M[t]["groups"] for t in range(0, config.n_iter)]
         # groups_mean = np.mean(groups)
@@ -104,6 +107,7 @@ def main(config: AlphaExperimentConfig):
             "alpha_expectation": config.alpha_expectation,
             "alpha_variance": config.alpha_variance,
             "epsilon": config.epsilon,
+            "deviation_gain": deviation_gain.mean(),
             "T_mean": T,
             "T_mean_all": T_all,
             "T_std": T_std,
