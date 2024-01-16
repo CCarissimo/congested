@@ -70,6 +70,14 @@ def run_game(config: AlphaExperimentConfig):
     return data
 
 
+def increase_decrease_size(W):
+    differences = np.diff(W)
+    increase_indices = np.where(differences >= 0)
+    decrease_indices = np.where(differences < 0)
+
+    return differences[increase_indices].mean(), differences[decrease_indices].mean()
+
+
 def main(config: AlphaExperimentConfig):
     all_repetitions = []
     for i in range(config.repetitions):
@@ -93,6 +101,7 @@ def main(config: AlphaExperimentConfig):
 
         user0 = np.array([-M[t]["R"][0].mean() for t in M.keys()])
         deviation_gain = W - user0
+        increase, decrease = increase_decrease_size(W)
 
         # groups = [M[t]["groups"] for t in range(0, config.n_iter)]
         # groups_mean = np.mean(groups)
@@ -108,6 +117,8 @@ def main(config: AlphaExperimentConfig):
             "alpha_variance": config.alpha_variance,
             "epsilon": config.epsilon,
             "deviation_gain": deviation_gain.mean(),
+            "increase": increase,
+            "decrease": decrease,
             "T_mean": T,
             "T_mean_all": T_all,
             "T_std": T_std,
