@@ -15,7 +15,6 @@ from typing import Union
 @dataclass
 class AlphaExperimentConfig:
     user0_alpha: float
-    alpha: np.ndarray
     alpha_expectation: float
     alpha_variance: float
     n_agents: int
@@ -86,7 +85,7 @@ def main(config: AlphaExperimentConfig):
 
         exclusion_threshold = 0.8
         W = [M[t]["R"].mean() for t in range(0, config.n_iter)]
-        L = nolds.lyap_r(W)
+        # L = nolds.lyap_r(W)
         T = np.mean(W[int(exclusion_threshold * config.n_iter):config.n_iter])
         T_all = np.mean(W)
         median = np.median(W[int(exclusion_threshold * config.n_iter):config.n_iter])
@@ -108,7 +107,7 @@ def main(config: AlphaExperimentConfig):
             "T_mean": T,
             "T_mean_all": T_all,
             "T_std": T_std,
-            "Lyapunov": L,
+            # "Lyapunov": L,
             "median": median,
             "Qvar_mean": Qvar_mean,
         }
@@ -150,23 +149,36 @@ if __name__ == '__main__':
     n_actions = 3
     n_iter = 100000
     epsilon = 0.01
-    alpha = 0.1
+    # alpha = 0.1
     gamma = 0
     q_initial = "UNIFORM"
     qmin = -2
     qmax = -1
-    cost = 0
-    repetitions = 1
-    delay_method = "uniform_random"
-    fixed_delay = 0
+    repetitions = 40
 
-    num_cpus = mp.cpu_count()-10  # int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
+    num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
-    for delay_parameter in np.arange(1, 2):
-        experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}"
-        parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial,
-                           qmin, qmax, cost, delay_method, delay_parameter, fixed_delay)
-        argument_list.append(parameter_tuple)
+    for user0_alpha in np.linspace(0.01, 1, 100):
+        for expectation in np.linspace(0.01, 1, 100):
+            for variance in [0]:
+                experiment_name = f"user0{user0_alpha}_expectation{expectation}_variance{variance}"
+                experiment_config = AlphaExperimentConfig(
+                    user0_alpha=user0_alpha,
+                    alpha_expectation=expectation,
+                    alpha_variance=variance,
+                    n_agents=n_agents,
+                    n_states=n_states,
+                    n_actions=n_actions,
+                    n_iter=n_iter,
+                    epsilon=epsilon,
+                    gamma=gamma,
+                    q_initial=q_initial,
+                    qmin=qmin,
+                    qmax=qmax,
+                    path=path,
+                    name=experiment_name,
+                    repetitions=repetitions)
+                argument_list.append(experiment_config)
     results = run_apply_async_multiprocessing(main, argument_list=argument_list, num_processes=num_cpus)
 
     utilities.save_pickle_with_unique_filename(results, f"{path}/results.pkl")
