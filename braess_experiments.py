@@ -157,6 +157,7 @@ if __name__ == '__main__':
     repetitions = 40
 
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
+    print(f"Found {num_cpus} processors to use")
     argument_list = []
     for user0_alpha in np.linspace(0.01, 1, 100):
         for expectation in np.linspace(0.01, 1, 100):
