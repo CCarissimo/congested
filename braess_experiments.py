@@ -64,8 +64,8 @@ def run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_ini
 def main(path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_method, delay_parameter, fixed_delay):
     all_repetitions = []
     for i in range(repetitions):
-        M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost, delay_parameter)
-        experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}_d{delay_parameter}"
+        M = run_game(n_agents, n_states, n_actions, n_iter, epsilon, alpha, gamma, q_initial, qmin, qmax, cost,delay_method, delay_parameter, fixed_delay)
+        experiment_name = f"N{n_agents}_S{n_states}_A{n_actions}_I{n_iter}_e{epsilon}_a{alpha}_g{gamma}_c{cost}_m{delay_method}_d{delay_parameter}_f{fixed_delay}"
         Path(f"{path}/{experiment_name}").mkdir(parents=True, exist_ok=True)
         all_q_tables = np.stack([M[t]["Q"] for t in M.keys()])
         utilities.save_numpy_array_with_unique_filename(all_q_tables, f"{path}/{experiment_name}/q_tables_{i}.npy")
@@ -166,10 +166,12 @@ if __name__ == '__main__':
     repetitions = 40
     delay_method = "uniform_random"
     fixed_delay = 0
+    delay_parameter = 100
 
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
-    for delay_parameter in np.arange(1, 2):
+    
+    for delay_parameter in np.arange(1, 101):
         parameter_tuple = (path, n_agents, n_states, n_actions, n_iter, repetitions, epsilon, alpha, gamma, q_initial,
                            qmin, qmax, cost, delay_method, delay_parameter, fixed_delay)
         argument_list.append(parameter_tuple)
