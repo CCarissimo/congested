@@ -184,8 +184,8 @@ if __name__ == '__main__':
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     print(f"Found {num_cpus} processors to use")
     argument_list = []
-    for user0_imitation in np.arange(1, 100, 10):
-        for imitation in np.arange(1, 100, 10):
+    for user0_imitation in np.arange(1, 100, 1):
+        for imitation in np.arange(1, 100, 1):
             experiment_name = f"user0{user0_imitation}_imitation{imitation}"
             experiment_config = AlphaExperimentConfig(
                 user0_alpha=user0_alpha,
