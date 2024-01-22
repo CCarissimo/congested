@@ -33,6 +33,19 @@ class AlphaExperimentConfig:
     repetitions: int
 
 
+def imitate(Q, S, A, reward_per_action, S_, n_agents, n_actions, alpha, gamma):
+    for i in range(n_actions):
+        ind = np.where(A != i)[0]  # [0] for the array of indices
+        if type(alpha) is np.ndarray:
+            sub_alpha = alpha[ind]
+        else:
+            sub_alpha = alpha
+        other_actions = (np.ones(n_agents) * i).astype(int)
+        other_rewards = np.ones(n_agents) * reward_per_action[i]
+        Q, _ = bellman_update_q_table(ind, Q, S, other_actions, other_rewards, S_, sub_alpha, gamma)
+    return Q
+
+
 def run_game(config: AlphaExperimentConfig):
     Q = initialize_q_table(config.q_initial, config.n_agents, config.n_states, config.n_actions, config.qmin, config.qmax)
     alpha = np.random.uniform(
@@ -59,9 +72,10 @@ def run_game(config: AlphaExperimentConfig):
     for t in range(config.n_iter):
         epsilon = (eps_end + (eps_start - eps_end) * math.exp(-1. * t / eps_decay))  # if t < N_ITER/10 else 0
         A = e_greedy_select_action(Q, S, epsilon)
-        R, _, _ = braess_augmented_network(A, config.n_agents, cost=0)
+        R, _, reward_per_action = braess_augmented_network(A, config.n_agents, cost=0)
 
         Q, sum_of_belief_updates = bellman_update_q_table(all_agent_indices, Q, S, A, R, S, alpha, config.gamma)
+        Q = imitate(Q, S, A, reward_per_action, S, config.n_agents, config.n_actions, alpha_imitation, config.gamma)
 
         ## SAVE PROGRESS DATA
         data[t] = {
@@ -121,6 +135,7 @@ def main(config: AlphaExperimentConfig):
             "alpha_expectation": config.alpha_expectation,
             "alpha_variance": config.alpha_variance,
             "imitation": config.imitation,
+            "user0_imitation": config.user0_imitation,
             "epsilon": config.epsilon,
             "deviation_gain": deviation_gain.mean(),
             "increase": increase,
