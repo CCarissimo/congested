@@ -84,10 +84,10 @@ def main(config: AlphaExperimentConfig):
         M = run_game(config)
         full_path = f"{config.path}/{config.name}"
         Path(full_path).mkdir(parents=True, exist_ok=True)
-        all_q_tables = np.stack([M[t]["Q"] for t in M.keys()])
-        utilities.save_numpy_array_with_unique_filename(all_q_tables, f"{full_path}/q_tables_{i}.npy")
-        all_rewards = np.stack([M[t]["R"] for t in M.keys()])
-        utilities.save_numpy_array_with_unique_filename(all_rewards, f"{full_path}/rewards_{i}.npy")
+        # all_q_tables = np.stack([M[t]["Q"] for t in M.keys()])
+        # utilities.save_numpy_array_with_unique_filename(all_q_tables, f"{full_path}/q_tables_{i}.npy")
+        # all_rewards = np.stack([M[t]["R"] for t in M.keys()])
+        # utilities.save_numpy_array_with_unique_filename(all_rewards, f"{full_path}/rewards_{i}.npy")
         # all_actions = np.stack([M[t]["A"] for t in M.keys()])
         # utilities.save_numpy_array_with_unique_filename(all_actions, f"{path}/{experiment_name}/actions.npy")
 
@@ -175,8 +175,8 @@ if __name__ == '__main__':
     print(f"Found {num_cpus} processors to use")
     argument_list = []
     for user0_alpha in np.linspace(0.01, 1, 100):
-        for expectation in np.linspace(0.01, 1, 100):
-            for variance in [0]:
+        for expectation in [0.5]:
+            for variance in np.linspace(0, 1, 101):
                 experiment_name = f"user0{user0_alpha}_expectation{expectation}_variance{variance}"
                 experiment_config = AlphaExperimentConfig(
                     user0_alpha=user0_alpha,
