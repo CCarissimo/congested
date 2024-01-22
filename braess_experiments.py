@@ -17,6 +17,8 @@ class AlphaExperimentConfig:
     user0_alpha: float
     alpha_expectation: float
     alpha_variance: float
+    imitation: float
+    user0_imitation: float
     n_agents: int
     n_states: int
     n_actions: int
@@ -38,7 +40,10 @@ def run_game(config: AlphaExperimentConfig):
         high=config.alpha_expectation+(config.alpha_variance/2),
         size=config.n_agents
     )
+    alpha_imitation = alpha/config.imitation
     alpha[0] = config.user0_alpha
+    alpha_imitation[0] = alpha/config.user0_imitation
+
     eps_decay = config.n_iter / 8
     if config.epsilon == "DECAYED":
         eps_start = 1
@@ -115,6 +120,7 @@ def main(config: AlphaExperimentConfig):
             "alpha": config.user0_alpha,
             "alpha_expectation": config.alpha_expectation,
             "alpha_variance": config.alpha_variance,
+            "imitation": config.imitation,
             "epsilon": config.epsilon,
             "deviation_gain": deviation_gain.mean(),
             "increase": increase,
@@ -170,30 +176,35 @@ if __name__ == '__main__':
     qmin = -2
     qmax = -1
     repetitions = 40
+    imitation = 0.01
+    user0_alpha = 0.7
+    alpha_expectation = 0.7
+    variance = 0
 
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     argument_list = []
-    for user0_alpha in np.linspace(0.01, 1, 100):
-        for expectation in np.linspace(0.01, 1, 100):
-            for variance in [0]:
-                experiment_name = f"user0{user0_alpha}_expectation{expectation}_variance{variance}"
-                experiment_config = AlphaExperimentConfig(
-                    user0_alpha=user0_alpha,
-                    alpha_expectation=expectation,
-                    alpha_variance=variance,
-                    n_agents=n_agents,
-                    n_states=n_states,
-                    n_actions=n_actions,
-                    n_iter=n_iter,
-                    epsilon=epsilon,
-                    gamma=gamma,
-                    q_initial=q_initial,
-                    qmin=qmin,
-                    qmax=qmax,
-                    path=path,
-                    name=experiment_name,
-                    repetitions=repetitions)
-                argument_list.append(experiment_config)
+    for user0_imitation in np.arange(1, 100, 10):
+        for imitation in np.arange(1, 100, 10):
+            experiment_name = f"user0{user0_imitation}_imitation{imitation}"
+            experiment_config = AlphaExperimentConfig(
+                user0_alpha=user0_alpha,
+                alpha_expectation=alpha_expectation,
+                alpha_variance=variance,
+                imitation=imitation,
+                user0_imitation=user0_imitation,
+                n_agents=n_agents,
+                n_states=n_states,
+                n_actions=n_actions,
+                n_iter=n_iter,
+                epsilon=epsilon,
+                gamma=gamma,
+                q_initial=q_initial,
+                qmin=qmin,
+                qmax=qmax,
+                path=path,
+                name=experiment_name,
+                repetitions=repetitions)
+            argument_list.append(experiment_config)
     results = run_apply_async_multiprocessing(main, argument_list=argument_list, num_processes=num_cpus)
 
     utilities.save_pickle_with_unique_filename(results, f"{path}/results.pkl")
