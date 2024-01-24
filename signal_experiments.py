@@ -185,7 +185,7 @@ if __name__ == '__main__':
     precision = 3
     print(f"Found {num_cpus} processors to use")
     argument_list = []
-    for signal_type in ["mean_threshold", "argmax_cross", "argmax"]:
+    for signal_type in ["mean_threshold", "argmax_cross", "argmax", "argmax_switch"]:
         for signal_param in np.linspace(1.5, 2, 100):
             experiment_name = f"signal_type{signal_type}_param{signal_param:.{precision}f}"
             if signal_type == "argmax":
