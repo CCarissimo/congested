@@ -61,7 +61,8 @@ def run_signal_game(config: SignalExperimentConfig):
     for t in range(config.n_iter):
         epsilon = (eps_end + (eps_start - eps_end) * math.exp(-1. * t / eps_decay))  # if t < N_ITER/10 else 0
         A = e_greedy_select_action(Q, S, epsilon)
-        R, _, reward_per_action = large_braess_network(A, paths, adj, config.n_agents)
+        R = large_braess_network(A, paths, adj, config.n_agents)
+        # R, _, reward_per_action = braess_augmented_network(A, config.n_agents, 0)
 
         if config.signal_type == "mean_threshold":
             S_ = np.ones(n_agents).astype(int) if R.mean() < -config.signal_param else np.zeros(n_agents).astype(int)
