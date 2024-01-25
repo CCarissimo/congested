@@ -33,7 +33,7 @@ adj = g.get_adjacency(attribute="cost")
 paths = g.get_all_simple_paths(0, to=8)
 
 
-def large_braess_network(A, paths, adj, gameConfig):
+def large_braess_network(A, paths, adj, n_agents):
     visits = np.zeros((9, 9))
     for a in A:
         path = paths[a]
@@ -50,7 +50,7 @@ def large_braess_network(A, paths, adj, gameConfig):
             elif adj[i, j] == 1:
                 costs[i, j] = 1
 
-    R = np.zeros((gameConfig.n_agents))
+    R = np.zeros(n_agents)
     for agent, a in enumerate(A):
         path = paths[a]
         cost = 0
