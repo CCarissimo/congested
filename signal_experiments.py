@@ -7,6 +7,7 @@ from learning_in_games import utilities
 import math
 from dataclasses import dataclass
 from typing import Union
+from large_braess_experiments import *
 
 
 @dataclass
@@ -60,7 +61,7 @@ def run_signal_game(config: SignalExperimentConfig):
     for t in range(config.n_iter):
         epsilon = (eps_end + (eps_start - eps_end) * math.exp(-1. * t / eps_decay))  # if t < N_ITER/10 else 0
         A = e_greedy_select_action(Q, S, epsilon)
-        R, _, reward_per_action = braess_augmented_network(A, config.n_agents, cost=0)
+        R, _, reward_per_action = large_braess_network(A, paths, adj, config.n_agents)
 
         if config.signal_type == "mean_threshold":
             S_ = np.ones(n_agents).astype(int) if R.mean() < -config.signal_param else np.zeros(n_agents).astype(int)
@@ -171,25 +172,25 @@ if __name__ == '__main__':
     path = args.path
     n_agents = 100
     n_states = 2
-    n_actions = 3
+    n_actions = 20
     n_iter = 100000
     epsilon = "DECAYED"
     alpha = 0.01
     gamma = 0.95
     q_initial = "UNIFORM"
-    qmin = -2
-    qmax = -1
+    qmin = -4
+    qmax = -2
     repetitions = 40
 
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     precision = 3
     print(f"Found {num_cpus} processors to use")
     argument_list = []
-    for signal_type in ["mean_threshold", "argmax_cross", "argmax", "argmax_switch"]:
-        for signal_param in np.linspace(1.5, 2, 100):
-            experiment_name = f"signal_type{signal_type}_param{signal_param:.{precision}f}"
+    for signal_type in ["mean_threshold", "argmax"]:
+        for signal_param in np.linspace(2.5, 3, 100):
             if signal_type == "argmax":
-                n_states = 3
+                n_states = 20
+            experiment_name = f"signal_type{signal_type}_param{signal_param:.{precision}f}"
             experiment_config = SignalExperimentConfig(
                 signal_type=signal_type,
                 signal_param=signal_param,
