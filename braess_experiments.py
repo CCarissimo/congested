@@ -53,9 +53,10 @@ def run_game(config: AlphaExperimentConfig):
         high=config.alpha_expectation+(config.alpha_variance/2),
         size=config.n_agents
     )
-    alpha_imitation = alpha/config.imitation
-    alpha[0] = config.user0_alpha
-    alpha_imitation[0] = alpha/config.user0_imitation
+    alpha_imitation = np.ones(config.n_agents)*config.imitation
+    # alpha_imitation = config.imitation
+    # alpha[0] = config.user0_alpha
+    # alpha_imitation[0] = config.imitation
 
     eps_decay = config.n_iter / 8
     if config.epsilon == "DECAYED":
@@ -183,28 +184,29 @@ if __name__ == '__main__':
     n_agents = 100
     n_states = 1
     n_actions = 3
-    n_iter = 100000
+    n_iter = 50000
     epsilon = 0.01
     # alpha = 0.1
     gamma = 0
     q_initial = "UNIFORM"
     qmin = -2
     qmax = -1
-    repetitions = 40
+    repetitions = 10
     imitation = 0.01
     user0_alpha = 0.7
     alpha_expectation = 0.7
     variance = 0
+    user0_imitation = 0
 
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     print(f"Found {num_cpus} processors to use")
     argument_list = []
-    for user0_imitation in np.arange(1, 100, 1):
-        for imitation in np.arange(1, 100, 1):
-            experiment_name = f"user0{user0_imitation}_imitation{imitation}"
+    for alpha in np.linspace(0.01, 1, 100):
+        for imitation in np.linspace(0, 1, 101):
+            experiment_name = f"alpha{alpha}_imitation{imitation}"
             experiment_config = AlphaExperimentConfig(
                 user0_alpha=user0_alpha,
-                alpha_expectation=alpha_expectation,
+                alpha_expectation=alpha,
                 alpha_variance=variance,
                 imitation=imitation,
                 user0_imitation=user0_imitation,
