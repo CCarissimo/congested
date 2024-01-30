@@ -141,6 +141,7 @@ def main(config: AlphaExperimentConfig):
             "alpha_variance": config.alpha_variance,
             "imitation": config.imitation,
             "user0_imitation": config.user0_imitation,
+            "user0_epsilon": config.user0_epsilon,
             "epsilon": config.epsilon,
             "deviation_gain": deviation_gain.mean(),
             "increase": increase,
