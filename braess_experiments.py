@@ -196,7 +196,7 @@ if __name__ == '__main__':
     q_initial = np.array([-2, -2, -2])  # "UNIFORM"
     qmin = -2
     qmax = -1
-    repetitions = 10
+    repetitions = 40
     imitation = 0.01
     user0_alpha = 0.7
     alpha_expectation = 0.7
@@ -206,29 +206,29 @@ if __name__ == '__main__':
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     print(f"Found {num_cpus} processors to use")
     argument_list = []
-    for alpha in np.linspace(0.01, 1, 100):
-        # for user0_epsilon in np.linspace(0, 0.2, 21):
-        experiment_name = f"alpha{alpha}"  # _epsilon{imitation}"
-        experiment_config = AlphaExperimentConfig(
-            user0_alpha=user0_alpha,
-            alpha_expectation=alpha,
-            alpha_variance=variance,
-            imitation=imitation,
-            user0_imitation=user0_imitation,
-            n_agents=n_agents,
-            n_states=n_states,
-            n_actions=n_actions,
-            n_iter=n_iter,
-            user0_epsilon=user0_epsilon,
-            epsilon=epsilon,
-            gamma=gamma,
-            q_initial=q_initial,
-            qmin=qmin,
-            qmax=qmax,
-            path=path,
-            name=experiment_name,
-            repetitions=repetitions)
-        argument_list.append(experiment_config)
+    for epsilon in np.linspace(0, 0.2, 21):
+        for user0_epsilon in np.linspace(0, 0.2, 21):
+            experiment_name = f"user0{user0_epsilon}_epsilon{epsilon}"
+            experiment_config = AlphaExperimentConfig(
+                user0_alpha=user0_alpha,
+                alpha_expectation=alpha_expectation,
+                alpha_variance=variance,
+                imitation=imitation,
+                user0_imitation=user0_imitation,
+                n_agents=n_agents,
+                n_states=n_states,
+                n_actions=n_actions,
+                n_iter=n_iter,
+                user0_epsilon=user0_epsilon,
+                epsilon=epsilon,
+                gamma=gamma,
+                q_initial=q_initial,
+                qmin=qmin,
+                qmax=qmax,
+                path=path,
+                name=experiment_name,
+                repetitions=repetitions)
+            argument_list.append(experiment_config)
     results = run_apply_async_multiprocessing(main, argument_list=argument_list, num_processes=num_cpus)
 
     utilities.save_pickle_with_unique_filename(results, f"{path}/results.pkl")
