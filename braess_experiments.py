@@ -23,6 +23,7 @@ class AlphaExperimentConfig:
     n_states: int
     n_actions: int
     n_iter: int
+    user0_epsilon: float
     epsilon: Union[float, str]
     gamma: float
     q_initial: Union[np.ndarray, str]
@@ -65,6 +66,9 @@ def run_game(config: AlphaExperimentConfig):
     else:
         eps_start = config.epsilon
         eps_end = config.epsilon
+
+    epsilon = np.ones(n_agents)*config.epsilon
+    epsilon[0] = config.user0_epsilon
 
     all_agent_indices = np.arange(config.n_agents)
     S = np.random.randint(config.n_states, size=config.n_agents)
@@ -186,9 +190,10 @@ if __name__ == '__main__':
     n_actions = 3
     n_iter = 50000
     epsilon = 0.01
+    user0_epsilon = 0.01
     # alpha = 0.1
     gamma = 0
-    q_initial = "UNIFORM"
+    q_initial = np.array([-2, -2, -2])  # "UNIFORM"
     qmin = -2
     qmax = -1
     repetitions = 10
@@ -202,27 +207,28 @@ if __name__ == '__main__':
     print(f"Found {num_cpus} processors to use")
     argument_list = []
     for alpha in np.linspace(0.01, 1, 100):
-        for imitation in np.linspace(0, 1, 101):
-            experiment_name = f"alpha{alpha}_imitation{imitation}"
-            experiment_config = AlphaExperimentConfig(
-                user0_alpha=user0_alpha,
-                alpha_expectation=alpha,
-                alpha_variance=variance,
-                imitation=imitation,
-                user0_imitation=user0_imitation,
-                n_agents=n_agents,
-                n_states=n_states,
-                n_actions=n_actions,
-                n_iter=n_iter,
-                epsilon=epsilon,
-                gamma=gamma,
-                q_initial=q_initial,
-                qmin=qmin,
-                qmax=qmax,
-                path=path,
-                name=experiment_name,
-                repetitions=repetitions)
-            argument_list.append(experiment_config)
+        # for user0_epsilon in np.linspace(0, 0.2, 21):
+        experiment_name = f"alpha{alpha}"  # _epsilon{imitation}"
+        experiment_config = AlphaExperimentConfig(
+            user0_alpha=user0_alpha,
+            alpha_expectation=alpha,
+            alpha_variance=variance,
+            imitation=imitation,
+            user0_imitation=user0_imitation,
+            n_agents=n_agents,
+            n_states=n_states,
+            n_actions=n_actions,
+            n_iter=n_iter,
+            user0_epsilon=user0_epsilon,
+            epsilon=epsilon,
+            gamma=gamma,
+            q_initial=q_initial,
+            qmin=qmin,
+            qmax=qmax,
+            path=path,
+            name=experiment_name,
+            repetitions=repetitions)
+        argument_list.append(experiment_config)
     results = run_apply_async_multiprocessing(main, argument_list=argument_list, num_processes=num_cpus)
 
     utilities.save_pickle_with_unique_filename(results, f"{path}/results.pkl")
