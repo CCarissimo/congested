@@ -75,7 +75,7 @@ def run_game(config: AlphaExperimentConfig):
 
     data = {}
     for t in range(config.n_iter):
-        epsilon = (eps_end + (eps_start - eps_end) * math.exp(-1. * t / eps_decay))  # if t < N_ITER/10 else 0
+        # epsilon = (eps_end + (eps_start - eps_end) * math.exp(-1. * t / eps_decay))  # if t < N_ITER/10 else 0
         A = e_greedy_select_action(Q, S, epsilon)
         R, _, reward_per_action = braess_augmented_network(A, config.n_agents, cost=0)
 
