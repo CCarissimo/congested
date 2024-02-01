@@ -194,7 +194,7 @@ if __name__ == '__main__':
     user0_epsilon = 0.01
     # alpha = 0.1
     gamma = 0
-    q_initial = np.array([-2, -2, -2])  # "UNIFORM"
+    q_initial = np.array([-2.1, -2.1, -2])  # "UNIFORM"
     qmin = -2
     qmax = -1
     repetitions = 40
