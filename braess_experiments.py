@@ -127,6 +127,28 @@ def increase_decrease_run_length(W):
     return count_increase_len.mean(), count_decrease_len.mean()
 
 
+def simple_probability_measure(W):
+    W = -W
+    increases = np.where(np.diff(W) >= 0)[0]
+    probability = len(increases)/len(W)
+    return probability
+
+
+def drop_count_measure(W):
+    W = -W
+    mean = W.mean()
+    above_mean = np.where(W > mean, True, False)
+    below_mean = np.where(W < mean, True, False)
+    below_mean = np.roll(below_mean, -1)
+    indices_cross_from_above = np.logical_and(above_mean, below_mean)[1:]
+    diff = np.diff(W)
+    mean_decrease = np.where(diff < 0, -diff, 0).mean()
+    std_decrease = np.where(diff < 0, -diff, 0).std()
+    drop_indices = np.where(diff[indices_cross_from_above] > mean_decrease+3*std_decrease, 1, 0)
+    num_drops = drop_indices.sum()
+    return num_drops
+
+
 def main(config: AlphaExperimentConfig):
     all_repetitions = []
     for i in range(config.repetitions):
@@ -140,7 +162,7 @@ def main(config: AlphaExperimentConfig):
         # all_actions = np.stack([M[t]["A"] for t in M.keys()])
         # utilities.save_numpy_array_with_unique_filename(all_actions, f"{path}/{experiment_name}/actions.npy")
 
-        exclusion_threshold = 0.8
+        exclusion_threshold = 0.5
         W = np.array([M[t]["R"].mean() for t in range(0, config.n_iter)])
         # L = nolds.lyap_r(W)
         T = np.mean(W[int(exclusion_threshold * config.n_iter):config.n_iter])
@@ -152,6 +174,8 @@ def main(config: AlphaExperimentConfig):
         deviation_gain = W - user0
         increase, decrease = increase_decrease_size(W)
         up_len, down_len = increase_decrease_run_length(W)
+        counts = drop_count_measure(W[int(exclusion_threshold*n_iter):-1])
+        probability = simple_probability_measure(W[int(exclusion_threshold*n_iter):-1])
 
         # groups = [M[t]["groups"] for t in range(0, config.n_iter)]
         # groups_mean = np.mean(groups)
@@ -172,6 +196,8 @@ def main(config: AlphaExperimentConfig):
             "deviation_gain": deviation_gain.mean(),
             "increase": increase,
             "decrease": decrease,
+            "counts": counts,
+            "probability": probability,
             "up_len": up_len,
             "down_len": down_len,
             "T_mean": T,
