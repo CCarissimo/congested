@@ -95,11 +95,36 @@ def run_game(config: AlphaExperimentConfig):
 
 
 def increase_decrease_size(W):
+    """
+    W is a vector of negative values, so diff of two consecutive negative values e.g. -2, -1
+    will be -1 - -2 = 1
+    or -1, -2,  -2 - -1 = -1
+    in the first case social welfare increased and diff is positive
+    in the second case social welfare decreased and diff is negative
+
+    so edgeworth cycles which gradually reach Nash, means gradual decrease in social welfare
+    and the average size of those steps should be smaller than the ones that rapidly shoot
+    towards social optimum
+    therefore average decreases should be smaller than average increases.
+    """
     differences = np.diff(W)
     increase_indices = np.where(differences >= 0)
     decrease_indices = np.where(differences < 0)
 
     return differences[increase_indices].mean(), differences[decrease_indices].mean()
+
+
+def increase_decrease_run_length(W):
+    differences = np.diff(W)
+    increases = np.where(differences > 0, True, False)
+    decreases = np.where(differences < 0, True, False)
+
+    count_increase_len = np.diff(
+        np.where(np.concatenate(([increases[0]], increases[:-1] != increases[1:], [True])))[0])[::2]
+    count_decrease_len = np.diff(
+        np.where(np.concatenate(([decreases[0]], decreases[:-1] != decreases[1:], [True])))[0])[::2]
+
+    return count_increase_len.mean(), count_decrease_len.mean()
 
 
 def main(config: AlphaExperimentConfig):
@@ -126,6 +151,7 @@ def main(config: AlphaExperimentConfig):
         user0 = np.array([-M[t]["R"][0].mean() for t in M.keys()])
         deviation_gain = W - user0
         increase, decrease = increase_decrease_size(W)
+        up_len, down_len = increase_decrease_run_length(W)
 
         # groups = [M[t]["groups"] for t in range(0, config.n_iter)]
         # groups_mean = np.mean(groups)
@@ -146,6 +172,8 @@ def main(config: AlphaExperimentConfig):
             "deviation_gain": deviation_gain.mean(),
             "increase": increase,
             "decrease": decrease,
+            "up_len": up_len,
+            "down_len": down_len,
             "T_mean": T,
             "T_mean_all": T_all,
             "T_std": T_std,
@@ -207,9 +235,9 @@ if __name__ == '__main__':
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     print(f"Found {num_cpus} processors to use")
     argument_list = []
-    for epsilon in np.linspace(0, 1, 101):
-        for user0_epsilon in np.linspace(0, 1, 101):
-            experiment_name = f"user0{user0_epsilon}_epsilon{epsilon}"
+    for alpha_expectation in np.linspace(0.01, 1, 100):
+        for imitation in np.linspace(0, 1, 101):
+            experiment_name = f"alpha{alpha_expectation}_beta{imitation}"
             experiment_config = AlphaExperimentConfig(
                 user0_alpha=user0_alpha,
                 alpha_expectation=alpha_expectation,
