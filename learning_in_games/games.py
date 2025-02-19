@@ -198,18 +198,17 @@ def duopoly(actions, config: GameConfig):
     a1 = actions[0]
     a2 = actions[1]
 
-    p1 = a1 / config.n_actions
-    p2 = a2 / config.n_actions
-
-    if p1 < p2:
-        r1 = (1 - p1) * p1
+    demand = config.n_actions - min(a1, a2)
+    
+    if a1 < a2:
+        r1 = demand * a1
         r2 = 0
-    elif p1 == p2:
-        r1 = 0.5 * (1 - p1)
+    elif a1 == a2:
+        r1 = 0.5 * demand * a1 
         r2 = r1
-    elif p1 > p2:
+    elif a1 > a2:
         r1 = 0
-        r2 = (1 - p2) * p2
+        r2 = demand * a2
 
     R = np.array([r1, r2])
     S = np.array([a2, a1])
