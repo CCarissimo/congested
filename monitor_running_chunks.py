@@ -13,7 +13,7 @@ useful_tags = ["job_id", "allocating_node","job_state"]
 
 jobs = data["jobs"]
 
-slurm_dir = "/cluster/home/ccarissimo/Bachelors_Project_Simulations/Utils/Simulations"
+slurm_dir = "/cluster/home/ccarissimo/braessQlearning/"
 
 # print(jobs[0])
 
