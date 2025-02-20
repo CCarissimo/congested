@@ -21,9 +21,9 @@ if __name__ == "__main__":
 
     main_dir = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game/"
     data_addr = f"{main_dir}data/"
-    dataframes_addr = f"{main_dir}dataframes/"
     if not os.path.isdir(data_addr):
         os.mkdir(data_addr)
+    dataframes_addr = f"{main_dir}dataframes/"
     if not os.path.isdir(dataframes_addr):
         os.mkdir(dataframes_addr)
 

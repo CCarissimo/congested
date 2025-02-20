@@ -40,7 +40,7 @@ for job in jobs:
         row["cores"] = job["job_resources"]["allocated_cores"]
         frames.append(row)
 
-    # os.system(f"scancel {job['job_id']}")
+    os.system(f"scancel {job['job_id']}")
 
 df = pd.DataFrame(frames)
 

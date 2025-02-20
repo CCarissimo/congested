@@ -32,13 +32,13 @@ def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, eps
     S = np.zeros(n_agents).astype(int)
 
     alphas = np.ones(n_agents) * alpha
-    alphas[-1] = alpha_deviator
+    alphas[0] = alpha_deviator
 
     epsilons = np.ones(n_agents)*epsilon
-    epsilons[-1] = epsilon_deviator
+    epsilons[0] = epsilon_deviator
 
     gammas = np.ones(n_agents) * gamma
-    gammas[-1] = gamma_deviator
+    gammas[0] = gamma_deviator
 
     data = {}
     for t in range(n_iter):
