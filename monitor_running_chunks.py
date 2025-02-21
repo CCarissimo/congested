@@ -27,7 +27,7 @@ slurm_dir = "/cluster/home/ccarissimo/braessQlearning/"
 
 # print(jobs[0])
 
-start = 1740046096
+start = 1740128574
 now = time.time()
 elapsed = (now - start)/(60*60)
 total_jobs = 1000
