@@ -2,6 +2,16 @@ import os
 import json
 import pandas as pd
 import time
+import argparse
+
+# Initialize the parser
+parser = argparse.ArgumentParser(description="input parameters")
+
+# Add arguments
+parser.add_argument('-d', '--scancel', action='store_true')
+
+# Parse the arguments
+args = parser.parse_args()
 
 os.system("rm in_queue.json")
 os.system("squeue --json >> in_queue.json")
@@ -40,7 +50,8 @@ for job in jobs:
         row["cores"] = job["job_resources"]["allocated_cores"]
         frames.append(row)
 
-    # os.system(f"scancel {job['job_id']}")
+    if args.scancel:
+        os.system(f"scancel {job['job_id']}")
 
 df = pd.DataFrame(frames)
 
