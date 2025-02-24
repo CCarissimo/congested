@@ -52,46 +52,59 @@ def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, eps
                    "R": R,
                    "reward_per_action": reward_per_action,
                    "A": A,
-                   "Q": Q,
+                   # "Q": Q,
                    }
     return data
 
 
 if __name__ == '__main__':
-    n_iter = 1000
-    n_agents = 100
-    q_initial = "UNIFORM"
-    alpha = 0.1
-    alpha_deviator = 0.5
-    epsilon = 0.01
-    epsilon_deviator = 0.2
-    gamma = 0
-    gamma_deviator = 0.1
 
-    params = DeviationBraessExperimentConfig(
-        n_iter,
-        n_agents,
-        q_initial,
-        alpha,
-        alpha_deviator,
-        epsilon,
-        epsilon_deviator,
-        gamma,
-        gamma_deviator
-    )
+    import time
 
-    print(str(params))
+    def main():
+        n_iter = 40000
+        n_agents = 100
+        q_initial = "UNIFORM"
+        alpha = 0.1
+        alpha_deviator = 0.5
+        epsilon = 0.01
+        epsilon_deviator = 0.2
+        gamma = 0
+        gamma_deviator = 0.1
 
-    results = run_deviation_braess(
-        n_iter,
-        n_agents,
-        q_initial,
-        alpha,
-        alpha_deviator,
-        epsilon,
-        epsilon_deviator,
-        gamma,
-        gamma_deviator
-    )
+        params = DeviationBraessExperimentConfig(
+            n_iter,
+            n_agents,
+            q_initial,
+            alpha,
+            alpha_deviator,
+            epsilon,
+            epsilon_deviator,
+            gamma,
+            gamma_deviator
+        )
 
-    print(results)
+        print(str(params))
+
+        results = run_deviation_braess(
+            n_iter,
+            n_agents,
+            q_initial,
+            alpha,
+            alpha_deviator,
+            epsilon,
+            epsilon_deviator,
+            gamma,
+            gamma_deviator
+        )
+
+        print(results)
+        return None
+
+
+    t0 = time.time()
+    main()
+    t1 = time.time()
+
+    total_n = t1 - t0
+    print(total_n)
