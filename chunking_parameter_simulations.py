@@ -31,7 +31,7 @@ if __name__ == "__main__":
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     print("identified cpus", num_cpus)
 
-    n_iter = [10]  # I suggest to reduce it to 10**4
+    n_iter = [2*(10**2)]  # I suggest to reduce it to 10**4
     n_agents = [100]
     q_init = ["UNIFORM"]
     repeat_count = 20
