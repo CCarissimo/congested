@@ -50,7 +50,7 @@ def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, eps
         ## SAVE PROGRESS DATA
         data[t] = {
                    "R": R,
-                   "reward_per_action": reward_per_action,
+                   # "reward_per_action": reward_per_action,
                    "A": A,
                    # "Q": Q,
                    }
@@ -60,6 +60,10 @@ def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, eps
 if __name__ == '__main__':
 
     import time
+    import tracemalloc
+    import linecache
+    import os
+
 
     def main():
         n_iter = 40000
@@ -101,10 +105,41 @@ if __name__ == '__main__':
         print(results)
         return None
 
+    def display_top(snapshot, key_type='lineno', limit=3):
+        snapshot = snapshot.filter_traces((
+            tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+            tracemalloc.Filter(False, "<unknown>"),
+        ))
+        top_stats = snapshot.statistics(key_type)
+
+        print("Top %s lines" % limit)
+        for index, stat in enumerate(top_stats[:limit], 1):
+            frame = stat.traceback[0]
+            # replace "/path/to/module/file.py" with "module/file.py"
+            filename = os.sep.join(frame.filename.split(os.sep)[-2:])
+            print("#%s: %s:%s: %.1f KiB"
+                  % (index, filename, frame.lineno, stat.size / 1024))
+            line = linecache.getline(frame.filename, frame.lineno).strip()
+            if line:
+                print('    %s' % line)
+
+        other = top_stats[limit:]
+        if other:
+            size = sum(stat.size for stat in other)
+            print("%s other: %.1f KiB" % (len(other), size / 1024))
+        total = sum(stat.size for stat in top_stats)
+        print("Total allocated size: %.1f KiB" % (total / 1024))
+
+
+    tracemalloc.start()
 
     t0 = time.time()
     main()
     t1 = time.time()
 
+    snapshot = tracemalloc.take_snapshot()
+    display_top(snapshot)
+
     total_n = t1 - t0
+
     print(total_n)
