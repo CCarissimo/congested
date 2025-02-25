@@ -31,7 +31,7 @@ if __name__ == "__main__":
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     print("identified cpus", num_cpus)
 
-    n_iter = [2*(10**4)]  # I suggest to reduce it to 10**4
+    n_iter = [10]  # I suggest to reduce it to 10**4
     n_agents = [100]
     q_init = ["UNIFORM"]
     repeat_count = 20
@@ -53,6 +53,8 @@ if __name__ == "__main__":
             gamma_deviators
         )
     ]
+
+    # print(settings)
 
     results = multi_file_simulation(settings, data_addr, repeat_count, num_processes=num_cpus)
 

@@ -26,6 +26,9 @@ class DeviationBraessExperimentConfig:
 
 
 def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, epsilon, epsilon_deviator, gamma, gamma_deviator):
+    # store_actions = np.zeros((n_iter, n_agents))
+    # store_rewards = np.zeros((n_iter, n_agents))
+
     Q = initialize_q_table(q_initial, n_agents, n_states=1, n_actions=3, qmin=-2, qmax=-1)
 
     all_agent_indices = np.arange(n_agents)
@@ -54,6 +57,9 @@ def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, eps
                    "A": A,
                    # "Q": Q,
                    }
+        # store_actions[t] = A
+        # store_rewards[t] = R
+
     return data
 
 
@@ -102,7 +108,7 @@ if __name__ == '__main__':
             gamma_deviator
         )
 
-        print(results)
+        # print(results)
         return None
 
     def display_top(snapshot, key_type='lineno', limit=3):
@@ -131,14 +137,14 @@ if __name__ == '__main__':
         print("Total allocated size: %.1f KiB" % (total / 1024))
 
 
-    tracemalloc.start()
+    # tracemalloc.start()
 
     t0 = time.time()
     main()
     t1 = time.time()
 
-    snapshot = tracemalloc.take_snapshot()
-    display_top(snapshot)
+    # snapshot = tracemalloc.take_snapshot()
+    # display_top(snapshot)
 
     total_n = t1 - t0
 
