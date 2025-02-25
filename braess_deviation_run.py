@@ -54,7 +54,7 @@ def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, eps
         data[t] = {
                    "R": R,
                    # "reward_per_action": reward_per_action,
-                   "A": A,
+                   # "A": A,
                    # "Q": Q,
                    }
         # store_actions[t] = A
