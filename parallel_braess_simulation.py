@@ -12,7 +12,7 @@ from tqdm import tqdm
 import pickle
 from dataclasses import asdict
 
-from braess_deviation_run import run_deviation_braess, DeviationBraessExperimentConfig
+from braess_deviation_run import *
 
 
 def player1params_dirname(alpha, epsilon, gamma):
@@ -46,13 +46,13 @@ def run_and_store_one_setting(args):
             params.gamma,
             params.gamma_deviator
         )
-        records[i] = run_results
+        # records[i] = run_results
         extracted_records.append(record2df(run_results, params, i))
 
-    records["params"] = params
+    # records["params"] = params
 
-    with open(f"{save_path}{file_name}.pkl", "wb") as file:
-        pickle.dump(records, file)
+    # with open(f"{save_path}{file_name}.pkl", "wb") as file:
+    #     pickle.dump(records, file)
 
     return extracted_records
 
@@ -60,15 +60,21 @@ def run_and_store_one_setting(args):
 def record2df(record, params, repeat_no):
     frame = asdict(params)
 
+    exclusion_threshold = 0.2
+
     W = np.array([record[t]["R"].mean() for t in range(0, params.n_iter)])
     welfare = np.mean(W)
     median = np.median(W)
     std = np.std(W)
-
     user0 = np.array([record[t]["R"][0].mean() for t in record.keys()])
     deviator_average = np.mean(user0)
     non_deviators = np.array([record[t]["R"][1:].mean() for t in record.keys()])
     non_deviator_average = np.mean(non_deviators)
+
+    increase, decrease = increase_decrease_size(W)
+    up_len, down_len = increase_decrease_run_length(W)
+    counts = drop_count_measure(W[int(exclusion_threshold * params.n_iter):-1])
+    probability = simple_probability_measure(W[int(exclusion_threshold * params.n_iter):-1])
 
     row = {
         "repetition": repeat_no,
@@ -77,6 +83,12 @@ def record2df(record, params, repeat_no):
         "median": median,
         "deviator_average": deviator_average,
         "non_deviator_average": non_deviator_average,
+        "increase": increase,
+        "decrease": decrease,
+        "counts": counts,
+        "probability": probability,
+        "up_len": up_len,
+        "down_len": down_len,
     }
 
     frame.update(row)

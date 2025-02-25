@@ -63,6 +63,61 @@ def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, eps
     return data
 
 
+def increase_decrease_size(W):
+    """
+    W is a vector of negative values, so diff of two consecutive negative values e.g. -2, -1
+    will be -1 - -2 = 1
+    or -1, -2,  -2 - -1 = -1
+    in the first case social welfare increased and diff is positive
+    in the second case social welfare decreased and diff is negative
+
+    so edgeworth cycles which gradually reach Nash, means gradual decrease in social welfare
+    and the average size of those steps should be smaller than the ones that rapidly shoot
+    towards social optimum
+    therefore average decreases should be smaller than average increases.
+    """
+    differences = np.diff(W)
+    increase_indices = np.where(differences >= 0)
+    decrease_indices = np.where(differences < 0)
+
+    return differences[increase_indices].mean(), differences[decrease_indices].mean()
+
+
+def increase_decrease_run_length(W):
+    differences = np.diff(W)
+    increases = np.where(differences > 0, True, False)
+    decreases = np.where(differences < 0, True, False)
+
+    count_increase_len = np.diff(
+        np.where(np.concatenate(([increases[0]], increases[:-1] != increases[1:], [True])))[0])[::2]
+    count_decrease_len = np.diff(
+        np.where(np.concatenate(([decreases[0]], decreases[:-1] != decreases[1:], [True])))[0])[::2]
+
+    return count_increase_len.mean(), count_decrease_len.mean()
+
+
+def simple_probability_measure(W):
+    W = -W
+    increases = np.where(np.diff(W) >= 0)[0]
+    probability = len(increases)/len(W)
+    return probability
+
+
+def drop_count_measure(W):
+    W = -W
+    mean = W.mean()
+    above_mean = np.where(W > mean, True, False)
+    below_mean = np.where(W < mean, True, False)
+    below_mean = np.roll(below_mean, -1)
+    indices_cross_from_above = np.logical_and(above_mean, below_mean)[1:]
+    diff = np.diff(W)
+    mean_decrease = np.where(diff < 0, -diff, 0).mean()
+    std_decrease = np.where(diff < 0, -diff, 0).std()
+    drop_indices = np.where(diff[indices_cross_from_above] > mean_decrease+3*std_decrease, 1, 0)
+    num_drops = drop_indices.sum()
+    return num_drops
+
+
 if __name__ == '__main__':
 
     import time
