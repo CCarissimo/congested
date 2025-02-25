@@ -20,6 +20,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main_dir = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game/"
+    # main_dir = "test_multiprocessing/"
     data_addr = f"{main_dir}data/"
     if not os.path.isdir(data_addr):
         os.mkdir(data_addr)
@@ -30,7 +31,7 @@ if __name__ == "__main__":
     num_cpus = int(os.environ.get("SLURM_NTASKS", os.cpu_count()))  # specific for euler cluster
     print("identified cpus", num_cpus)
 
-    n_iter = [4 * (10 ** 4)]  # I suggest to reduce it to 10**4
+    n_iter = [10]  # I suggest to reduce it to 10**4
     n_agents = [100]
     q_init = ["UNIFORM"]
     repeat_count = 40
