@@ -31,6 +31,8 @@ def run_and_store_one_setting(args):
     if not os.path.isdir(save_path):
         os.makedirs(save_path, exist_ok=True)
 
+    # create tmp directory
+    # os.makedirs(save_path + "/" + file_name)
     extracted_records = []
     for i in range(repeat_count):
         run_results = run_deviation_braess(
