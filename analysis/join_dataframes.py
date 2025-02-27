@@ -19,7 +19,7 @@ def all2df(dir_addr):
 def aggregate_dfs(input_df):
     print("aggregating...")
 
-    df = input_df.drop(columns=['#repeat', 'q_initial'])
+    df = input_df.drop(columns=['q_initial'])
 
     df = df.groupby(['alpha', 'alpha_deviator', 'epsilon', 'epsilon_deviator', 'gamma', 'gamma_deviator']).mean()
 
