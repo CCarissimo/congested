@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # Parse the arguments
     args = parser.parse_args()
 
-    main_dir = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game/"
+    main_dir = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game_2/"
     # main_dir = "test_multiprocessing/"
     data_addr = f"{main_dir}data/"
     if not os.path.isdir(data_addr):
@@ -36,7 +36,8 @@ if __name__ == "__main__":
     q_init = ["UNIFORM"]
     repeat_count = 40
     alpha_deviators = np.linspace(0.01, 1, 10)
-    epsilon_deviators = np.linspace(0, 0.5, 10)
+    xs = np.logspace(-3, -0.7, 10)
+    epsilon_deviators = np.round(xs, 3)  # array([0.001, 0.002, 0.003, 0.006, 0.011, 0.019, 0.034, 0.062, 0.111, 0.2  ])
     gamma_deviators = np.linspace(0, 0.99, 10)
 
     settings = [
