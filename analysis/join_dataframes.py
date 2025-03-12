@@ -32,6 +32,13 @@ def aggregate_dfs(input_df):
     return df
 
 
+def main(directory, save_directory):
+    final_df = all2df(directory)
+    final_df = aggregate_dfs(final_df)
+    final_df.to_csv(save_directory + "braess_symmetric_meta_game_results_v0.csv")
+    return final_df
+
+
 if __name__ == "__main__":
     directory = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game/dataframes/"
     save_directory = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game/"

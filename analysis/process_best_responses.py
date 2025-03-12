@@ -45,9 +45,7 @@ def process_and_save_main_df(path_to_df, path_to_best_responses, save_path=None,
     return final_df
 
 
-def main_process_best_responses():
-    dir_path = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game/"
-    path_to_df = f"{dir_path}braess_symmetric_meta_game_results_v0.csv"
+def main(dir_path, df):
 
     path_to_multi_br = f"{dir_path}multi_parameter_best_responses.pkl"
     # path_to_alpha_br = f"{dir_path}alpha_best_responses.pkl"
@@ -79,4 +77,6 @@ def main_process_best_responses():
 
 
 if __name__ == "__main__":
-    main_process_best_responses()
+    dir_path = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game/"
+    path_to_df = f"{dir_path}braess_symmetric_meta_game_results_v0.csv"
+    main(dir_path, path_to_df)

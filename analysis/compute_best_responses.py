@@ -324,27 +324,7 @@ def main(df):
     with open(dir_path + "multi_parameter_best_responses.pkl", "wb") as file:
         pickle.dump(best_responses, file)
 
-    # print("(2/2) computing multi_parameter welfare responses:")
-    # best_responses = compute_best_responses(df, parameter="multi_parameter", welfare_optimal=True)
-    # with open(dir_path + "multi_parameter_pareto_responses.pkl", "wb") as file:
-    #     pickle.dump(best_responses, file)
-
-    # print("(2/4) computing alpha best responses:")
-    # best_responses = compute_best_responses(df, parameter=["alpha"])
-    # with open(dir_path + "alpha_best_responses.pkl", "wb") as file:
-    #     pickle.dump(best_responses, file)
-    #
-    # print("(3/4) computing epsilon best responses:")
-    # best_responses = compute_best_responses(df, parameter=["epsilon"])
-    # with open(dir_path + "epsilon_best_responses.pkl", "wb") as file:
-    #     pickle.dump(best_responses, file)
-    #
-    # print("(4/4) computing gamma best responses:")
-    # best_responses = compute_best_responses(df, parameter=["gamma"])
-    # with open(dir_path + "gamma_best_responses.pkl", "wb") as file:
-    #     pickle.dump(best_responses, file)
-
-    return None
+    return best_responses
 
 
 if __name__ == "__main__":
