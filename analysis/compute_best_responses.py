@@ -318,7 +318,7 @@ def compute_deviator_best_response(df, welfare_optimal=False):
     return best_responses
 
 
-def main(df):
+def main(df, dir_path):
     print("(1/1) computing multi_parameter best responses:")
     best_responses = compute_deviator_best_response(df)
     with open(dir_path + "multi_parameter_best_responses.pkl", "wb") as file:
@@ -332,4 +332,4 @@ if __name__ == "__main__":
     filename = "braess_symmetric_meta_game_results_v0.csv"
     df = pd.read_csv(dir_path + filename)
 
-    main(df)
+    main(df, dir_path)

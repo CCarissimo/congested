@@ -9,7 +9,7 @@ def main(path_to_data):
     df = join_dataframes.main(path_to_data+"dataframes/", path_to_data)
 
     print("(2/3) computing best responses")
-    best_responses = compute_best_responses.main(df)
+    best_responses = compute_best_responses.main(df, path_to_data)
 
     print("(3/3) processing multi_parameter best responses")
     final_df = process_best_responses.calculate_metric_changes_after_best_responses(df, best_responses, sub_df=None)
