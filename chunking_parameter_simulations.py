@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # Parse the arguments
     args = parser.parse_args()
 
-    main_dir = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game_2/"
+    main_dir = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game_core/"
     # main_dir = "test_multiprocessing/"
     data_addr = f"{main_dir}data/"
     if not os.path.isdir(data_addr):
@@ -39,10 +39,11 @@ if __name__ == "__main__":
     xs = np.logspace(-3, -0.7, 10)
     epsilon_deviators = np.round(xs, 3)  # array([0.001, 0.002, 0.003, 0.006, 0.011, 0.019, 0.034, 0.062, 0.111, 0.2  ])
     gamma_deviators = np.linspace(0, 0.99, 10)
+    number_of_deviators = [2, 3, 6, 12, 25, 50]
 
     settings = [
-        DeviationBraessExperimentConfig(I, N, Q, a, a_, e, e_, g, g_)
-        for I, N, Q, a, a_, e, e_, g, g_ in itertools.product(
+        DeviationBraessExperimentConfig(I, N, Q, a, a_, e, e_, g, g_, m)
+        for I, N, Q, a, a_, e, e_, g, g_, m in itertools.product(
             n_iter,
             n_agents,
             q_init,
@@ -51,7 +52,8 @@ if __name__ == "__main__":
             [args.epsilon],
             epsilon_deviators,
             [args.gamma],
-            gamma_deviators
+            gamma_deviators,
+            number_of_deviators
         )
     ]
 

@@ -23,9 +23,10 @@ class DeviationBraessExperimentConfig:
     epsilon_deviator: float
     gamma: float
     gamma_deviator: float
+    number_of_deviators: int
 
 
-def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, epsilon, epsilon_deviator, gamma, gamma_deviator):
+def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, epsilon, epsilon_deviator, gamma, gamma_deviator, number_of_deviators=1):
     # store_actions = np.zeros((n_iter, n_agents))
     # store_rewards = np.zeros((n_iter, n_agents))
 
@@ -35,13 +36,13 @@ def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, eps
     S = np.zeros(n_agents).astype(int)
 
     alphas = np.ones(n_agents) * alpha
-    alphas[0] = alpha_deviator
+    alphas[0:number_of_deviators] = alpha_deviator
 
     epsilons = np.ones(n_agents)*epsilon
-    epsilons[0] = epsilon_deviator
+    epsilons[0:number_of_deviators] = epsilon_deviator
 
     gammas = np.ones(n_agents) * gamma
-    gammas[0] = gamma_deviator
+    gammas[0:number_of_deviators] = gamma_deviator
 
     data = {}
     for t in range(n_iter):

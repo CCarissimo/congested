@@ -44,7 +44,8 @@ def run_and_store_one_setting(args):
             params.epsilon,
             params.epsilon_deviator,
             params.gamma,
-            params.gamma_deviator
+            params.gamma_deviator,
+            params.number_of_deviators
         )
         # records[i] = run_results
         extracted_records.append(record2df(run_results, params, i))
@@ -170,6 +171,7 @@ if __name__ == '__main__':
     epsilon_deviators = [0]
     gamma = [0.1]
     gamma_deviators = [0.22]
+    population_threshold = [1]  # [2, 3, 6, 12, 25, 50]
 
     settings = [
         DeviationBraessExperimentConfig(I, N, Q, a, a_, e, e_, g, g_)
@@ -182,7 +184,8 @@ if __name__ == '__main__':
             epsilon,
             epsilon_deviators,
             gamma,
-            gamma_deviators
+            gamma_deviators,
+            population_threshold
         )
     ]
 

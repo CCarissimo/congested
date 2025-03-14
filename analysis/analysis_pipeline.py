@@ -2,6 +2,7 @@ import join_dataframes
 import compute_best_responses
 import process_best_responses
 import pickle
+import argparse
 
 
 def main(path_to_data, name="results_v0"):
@@ -22,6 +23,15 @@ def main(path_to_data, name="results_v0"):
 
 
 if __name__ == "__main__":
-    directory = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game_2/"
-    name = "braess_symmetric_results_v0"
-    main(directory, name)
+    # Initialize the parser
+    parser = argparse.ArgumentParser(description="input data locations")
+
+    # Add arguments
+    parser.add_argument('directory', type=str, help="main directory which contains the dataframes directory")
+    parser.add_argument('-n', '--name', type=str, help="name for file save", default="results_v0")
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Run the analysis
+    main(args.directory, args.name)
