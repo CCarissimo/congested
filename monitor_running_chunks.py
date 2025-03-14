@@ -25,9 +25,7 @@ jobs = data["jobs"]
 
 slurm_dir = "/cluster/home/ccarissimo/braessQlearning/"
 
-# print(jobs[0])
-
-start = 1741701584
+start = 1741960255
 now = time.time()
 elapsed = (now - start)/(60*60)
 total_jobs = 1000
