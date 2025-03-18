@@ -18,3 +18,4 @@ six==1.16.0
 tqdm==4.66.1
 tzdata==2023.3
 zipp==3.17.0
+ta_solver @ git+https://github.com/temetski/ta_solver.git@main
