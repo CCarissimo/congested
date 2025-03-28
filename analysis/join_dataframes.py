@@ -21,7 +21,7 @@ def aggregate_dfs(input_df):
 
     df = input_df.drop(columns=['q_initial'])
 
-    df = df.groupby(['alpha', 'alpha_deviator', 'epsilon', 'epsilon_deviator', 'gamma', 'gamma_deviator']).mean()
+    df = df.groupby(['alpha', 'alpha_deviator', 'epsilon', 'epsilon_deviator', 'gamma', 'gamma_deviator', 'number_of_deviators']).mean()
 
     df.reset_index(inplace=True)
 
