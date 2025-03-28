@@ -16,12 +16,12 @@ def main(path_to_data, name="results_v0"):
 
         sub_df = df[df["number_of_deviators"]==n_deviators]
 
-        print("(2/3) computing best responses")
+        print(f"N:{n_deviators} computing best responses")
         best_responses = compute_best_responses.compute_deviator_best_response(sub_df)
         with open(path_to_data + f"{name}_deviators{n_deviators}_mp_br_indices.pkl", "wb") as file:
             pickle.dump(best_responses, file)
 
-        print("(3/3) processing multi_parameter best responses")
+        print(f"N:{n_deviators} processing multi_parameter best responses")
         final_df = process_best_responses.calculate_metric_changes_after_best_responses(sub_df, best_responses, sub_df=None)
         final_df.to_csv(f"{path_to_data}{name}_deviators{n_deviators}_mp_br_metrics.csv")
 
