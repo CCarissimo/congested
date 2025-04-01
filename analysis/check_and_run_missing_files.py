@@ -33,5 +33,5 @@ if __name__ == "__main__":
         alpha = splitname[1].strip("a").strip("(").strip(")")
         epsilon = splitname[2].strip("e").strip("(").strip(")")
         gamma = splitname[3].strip("g").strip("(").strip(")")
-
-        os.system(f"sbatch --time=24:00:00 --ntasks=64 --mem-per-cpu=1G --wrap='python3 ./chunking_parameter_simulations.py {alpha} {epsilon} {gamma}'")
+        print(alpha, epsilon, gamma)
+        os.system(f"sbatch --time=24:00:00 --ntasks=64 --mem-per-cpu=1G --wrap='python3 /cluster/home/ccarissimo/braessQlearning/chunking_parameter_simulations.py {alpha} {epsilon} {gamma}'")
