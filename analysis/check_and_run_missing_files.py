@@ -23,10 +23,10 @@ if __name__ == "__main__":
 
     directory = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game_core/dataframes/"
 
-    files_in_directory = set(glob.glob(directory + "*.csv"))
+    files_in_directory = set([os.path.basename(x) for x in glob.glob(directory + '*.csv')])
 
     missing_files = all_filenames - files_in_directory
-
+    print(missing_files)
     # os.system(f"sbatch --time=24:00:00 --ntasks=64 --mem-per-cpu=1G --wrap='python3 ./chunking_parameter_simulations.py {alpha} {epsilon} {gamma}'")
 
 
