@@ -27,6 +27,11 @@ if __name__ == "__main__":
 
     missing_files = all_filenames - files_in_directory
     print(missing_files)
-    # os.system(f"sbatch --time=24:00:00 --ntasks=64 --mem-per-cpu=1G --wrap='python3 ./chunking_parameter_simulations.py {alpha} {epsilon} {gamma}'")
 
+    for filename in missing_files:
+        splitname = filename.split("_")
+        alpha = splitname[1].strip("a").strip("(").strip(")")
+        epsilon = splitname[2].strip("e").strip("(").strip(")")
+        gamma = splitname[3].strip("g").strip("(").strip(")")
 
+        os.system(f"sbatch --time=24:00:00 --ntasks=64 --mem-per-cpu=1G --wrap='python3 ./chunking_parameter_simulations.py {alpha} {epsilon} {gamma}'")
