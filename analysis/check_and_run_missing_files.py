@@ -32,6 +32,6 @@ if __name__ == "__main__":
         splitname = filename.split("_")
         alpha = splitname[1].strip("a").strip("(").strip(")")
         epsilon = splitname[2].strip("e").strip("(").strip(")")
-        gamma = splitname[3].strip("g").strip("(").strip(")")
+        gamma = splitname[3].strip("g").strip("(").strip(").csv")
         print(alpha, epsilon, gamma)
         os.system(f"sbatch --time=24:00:00 --ntasks=64 --mem-per-cpu=1G --wrap='python3 /cluster/home/ccarissimo/braessQlearning/chunking_parameter_simulations.py {alpha} {epsilon} {gamma}'")
