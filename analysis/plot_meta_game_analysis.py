@@ -160,7 +160,7 @@ def main(directory, filename):
     # Set the title
     # ax.set_title('The best reponses from the best reponse parameters')
 
-    ax.set_xlim([0, 0.5])  # X-axis limits
+    ax.set_xlim([0, 0.2])  # X-axis limits
     ax.set_ylim([0, 1])  # Y-axis limits
     ax.set_zlim([0, 1])  # Z-axis limits
 
@@ -275,7 +275,7 @@ def main(directory, filename):
     # Set the title
     ax.set_title(f'Collusion as {metric_tag}')
 
-    ax.set_xlim([0, 0.5])  # X-axis limits
+    ax.set_xlim([0, 0.2])  # X-axis limits
     ax.set_ylim([0, 1])  # Y-axis limits
     ax.set_zlim([0, 1])  # Z-axis limits
 
