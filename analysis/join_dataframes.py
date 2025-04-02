@@ -40,8 +40,8 @@ def main(directory, save_directory):
 
 
 if __name__ == "__main__":
-    directory = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game/dataframes/"
-    save_directory = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game/"
+    directory = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game_core/dataframes/"
+    save_directory = "/cluster/work/coss/ccarissimo/braess_symmetric_meta_game_core/"
 
     final_df = all2df(directory)
     final_df = aggregate_dfs(final_df)
