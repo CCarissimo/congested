@@ -164,13 +164,13 @@ def main(directory, filename):
     ax.set_ylim([0, 1])  # Y-axis limits
     ax.set_zlim([0, 1])  # Z-axis limits
 
-    ax.set_frame_on(False)  # Remove 3D box frame
-    ax.set_xticks([])  # Remove x-axis ticks
-    ax.set_yticks([])  # Remove y-axis ticks
-    ax.set_zticks([])  # Remove z-axis ticks
-    ax.set_xlabel('')  # Remove x-axis label
-    ax.set_ylabel('')  # Remove y-axis label
-    ax.set_zlabel('')  # Remove z-axis label
+    # ax.set_frame_on(False)  # Remove 3D box frame
+    # ax.set_xticks([])  # Remove x-axis ticks
+    # ax.set_yticks([])  # Remove y-axis ticks
+    # ax.set_zticks([])  # Remove z-axis ticks
+    # ax.set_xlabel('')  # Remove x-axis label
+    # ax.set_ylabel('')  # Remove y-axis label
+    # ax.set_zlabel('')  # Remove z-axis label
 
     # # Add labels
     # ax.set_xlabel('epsilon')
