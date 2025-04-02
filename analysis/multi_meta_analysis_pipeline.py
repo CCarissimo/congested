@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # join the dfs
     if args.joined:
         import pandas as pd
-        df = pd.read_csv(args.directory+args.name)
+        df = pd.read_csv(args.directory+args.name+".csv")
     else:
         df = join(args.directory, args.name)
 
