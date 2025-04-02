@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib.cm as cm
 # from matplotlib.animation import FuncAnimation
 import re
+import os
 
 
 def get_symmetric_strategies(df):
@@ -20,9 +21,11 @@ def extract_deviators_n(filename):
     return int(match.group(1)) if match else None
 
 
-def main(filename):
-    df = pd.read_csv(filename)
+def main(directory, filename):
+    df = pd.read_csv(directory+filename)
     n_deviators = extract_deviators_n(filename)
+
+    os.mkdir(directory+"plots/"+n_deviators)
 
     symbr = get_symmetric_strategies(df)
 
@@ -98,7 +101,7 @@ def main(filename):
     # ax.set_title('Best Response Plot from SYMMETRIC Equilibria')
 
     # Save
-    plt.savefig(f"plots/{n_deviators}/best_response_full-length-arrows_SYMMETRIC_EQUILIBRIA.png", dpi=180)
+    plt.savefig(f"{directory}/plots/{n_deviators}/best_response_full-length-arrows_SYMMETRIC_EQUILIBRIA.png", dpi=180)
 
     intersection = pd.merge(symbr, br_points_full,
                             left_on=["alpha_deviator_x", "epsilon_deviator_x", "gamma_deviator_x"],
@@ -176,7 +179,7 @@ def main(filename):
 
     # plt.tight_layout()
     # save
-    plt.savefig(f"plots/{n_deviators}/3D_plot_middle.png", dpi=300)
+    plt.savefig(f"{directory}/plots/{n_deviators}/3D_plot_middle.png", dpi=300)
 
     def create_labels(row):
         line1 = fr"$\alpha$: {row['alpha_deviator_x']}"
@@ -242,7 +245,7 @@ def main(filename):
     plt.title("Directed Network from DataFrame")
 
     # save
-    plt.savefig(f"plots/{n_deviators}/cycle_between_best_responses_SYMMETRIC.png", dpi=180)
+    plt.savefig(f"{directory}/plots/{n_deviators}/cycle_between_best_responses_SYMMETRIC.png", dpi=180)
 
     # Create a new figure for the 3D plot
     fig = plt.figure(figsize=(7, 7))
@@ -277,4 +280,22 @@ def main(filename):
     ax.set_zlim([0, 1])  # Z-axis limits
 
     # save
-    plt.savefig(f'plots/{n_deviators}/symmetric_player_{metric_tag}.png')
+    plt.savefig(f'{directory}/plots/{n_deviators}/symmetric_player_{metric_tag}.png')
+
+
+if __name__ == "__main__":
+    import argparse
+
+    # Initialize the parser
+    parser = argparse.ArgumentParser(description="input data locations")
+
+    # Add arguments
+    parser.add_argument('directory', type=str, help="main directory which contains the dataframes directory")
+    parser.add_argument('-n', '--name', type=str, help="name for file save", default="results_v0")
+    # parser.add_argument('-d', '--deviators', type=int, help="what is the size of the deviator population", default=None)
+    # parser.add_argument('-j', '--joined', action='store_true', help="have the dataframes already been joined")
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    main(args.directory, args.name)
