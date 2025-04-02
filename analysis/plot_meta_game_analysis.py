@@ -25,7 +25,7 @@ def main(directory, filename):
     df = pd.read_csv(directory+filename)
     n_deviators = extract_deviators_n(filename)
 
-    os.mkdir(directory+"plots/"+str(n_deviators))
+    os.makedirs(directory+"plots/"+str(n_deviators), exist_ok=True)
 
     symbr = get_symmetric_strategies(df)
 
