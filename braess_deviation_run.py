@@ -1,15 +1,8 @@
-import numpy as np
-from tqdm.auto import tqdm
-import nolds
-import pandas as pd
 from learning_in_games.games import braess_augmented_network
-from learning_in_games.running import *
 from learning_in_games.agents import *
-from pathlib import Path
-from learning_in_games import utilities
-import math
 from dataclasses import dataclass
 from typing import Union
+import numpy as np
 
 
 @dataclass
@@ -60,6 +53,9 @@ def run_deviation_braess(n_iter, n_agents, q_initial, alpha, alpha_deviator, eps
                    }
         # store_actions[t] = A
         # store_rewards[t] = R
+
+    # store final q_table
+    data[n_iter]["Q"] = Q
 
     return data
 

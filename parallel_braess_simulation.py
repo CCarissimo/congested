@@ -11,8 +11,8 @@ import os
 from tqdm import tqdm
 import pickle
 from dataclasses import asdict
-
 from braess_deviation_run import *
+from learning_in_games.games import braess_augmented_network
 
 
 def player1params_dirname(alpha, epsilon, gamma):
@@ -50,6 +50,9 @@ def run_and_store_one_setting(args):
         # records[i] = run_results
         extracted_records.append(record2df(run_results, params, i))
 
+        q_table = run_results[params.n_iter]["Q"]
+        np.savez_compressed(f"{save_path}{file_name}_run{i}", a=q_table)
+
     # records["params"] = params
 
     # with open(f"{save_path}{file_name}.pkl", "wb") as file:
@@ -62,20 +65,37 @@ def record2df(record, params, repeat_no):
     frame = asdict(params)
 
     exclusion_threshold = 0.2
+    n_dev = params.number_of_deviators
 
     W = np.array([record[t]["R"].mean() for t in range(0, params.n_iter)])
     welfare = np.mean(W)
     median = np.median(W)
     std = np.std(W)
-    user0 = np.array([record[t]["R"][0].mean() for t in record.keys()])
-    deviator_average = np.mean(user0)
-    non_deviators = np.array([record[t]["R"][1:].mean() for t in record.keys()])
+
+    deviators = np.array([record[t]["R"][0:n_dev].mean() for t in record.keys()])
+    deviator_average = np.mean(deviators)
+    deviator_average_half = np.mean(deviators[int(params.n_iter / 2):])
+    deviator_average_quarter = np.mean(deviators[int(params.n_iter / 4):])
+
+    non_deviators = np.array([record[t]["R"][n_dev:].mean() for t in record.keys()])
     non_deviator_average = np.mean(non_deviators)
+    non_deviator_average_half = np.mean(non_deviators[int(params.n_iter / 2):])
+    non_deviator_average_quarter = np.mean(non_deviators[int(params.n_iter / 4):])
 
     increase, decrease = increase_decrease_size(W)
     up_len, down_len = increase_decrease_run_length(W)
     counts = drop_count_measure(W[int(exclusion_threshold * params.n_iter):-1])
     probability = simple_probability_measure(W[int(exclusion_threshold * params.n_iter):-1])
+
+    # final one-shot evaluation
+    q_tables = record[params.n_iter]["Q"]
+    indices = np.arange(params.n_agents)
+    S = np.zeros(params.n_agents)
+    A = q_tables[indices, S, :].argmax(axis=1)
+    R = braess_augmented_network(A, params.n_agents, cost=0)
+    one_shot_welfare = np.mean(R)
+    one_shot_welfare_deviator = np.mean(R[0:n_dev])
+    one_shot_welfare_non_deviator = np.mean(R[n_dev:])
 
     row = {
         "repetition": repeat_no,
@@ -83,7 +103,14 @@ def record2df(record, params, repeat_no):
         "std": std,
         "median": median,
         "deviator_average": deviator_average,
+        "deviator_average_half": deviator_average_half,
+        "deviator_average_quarter": deviator_average_quarter,
         "non_deviator_average": non_deviator_average,
+        "non_deviator_average_half": non_deviator_average_half,
+        "non_deviator_average_quarter": non_deviator_average_quarter,
+        "one_shot": one_shot_welfare,
+        "one_shot_deviator": one_shot_welfare_deviator,
+        "one_shot_non_deviator": one_shot_welfare_non_deviator,
         "increase": increase,
         "decrease": decrease,
         "counts": counts,
@@ -116,44 +143,6 @@ def run_apply_async_multiprocessing(func, argument_list, num_processes):
         result_list_tqdm.append(job.get())
 
     return result_list_tqdm
-
-
-def file2df(file_addr, mode):
-    file_addr = file_addr.strip("'")
-    # file = RecordUtils.read_record(file_addr, mode)
-    with open(file_addr, "rb") as file:
-        file = pickle.load(file)
-    file = file['records']
-    dfs = []
-    for repeat_no in file.keys():
-        rec_df = record2df(file[repeat_no], repeat_no)
-        dfs.append(rec_df)
-    return pd.concat(dfs)
-
-
-def all2df(dir_addr, mode):
-    dfs = []
-    for file_name in tqdm(os.listdir(dir_addr)):
-        if re.match('.+\.pkl', file_name):
-            path = dir_addr + str(file_name)
-            file_df = file2df(file_addr=path, mode=mode)
-            dfs.append(file_df)
-
-    return pd.concat(dfs)
-
-
-def df2csv(df: pd.DataFrame, addr):
-    df.to_csv(
-        addr
-    )
-
-
-def convert_directory(dir_addr, dest, mode):
-    df = all2df(dir_addr, mode)
-    df2csv(df, dest)
-
-
-# convert_directory('./TestData/', './test.csv', RecordUtils.RecordMode.PICKLE)
 
 
 def flatten(xss):
@@ -200,6 +189,6 @@ if __name__ == '__main__':
     results = flatten(results)
     df = pd.DataFrame(results)
     destination = "/Users/ccarissimo/data/test_braess/test_outfile.csv"
-    df2csv(df, destination)
+    df.to_csv(destination)
 
     # convert_directory(addr, "/cluster/home/ccarissimo/Bachelors_Project_Simulations/Utils/Simulations/duopoly_5_full_sweep_10e6_2.csv", RecordUtils.RecordMode.PICKLE)
