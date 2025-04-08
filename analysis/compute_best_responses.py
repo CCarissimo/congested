@@ -161,7 +161,7 @@ def get_symmetric_strategies(df):
 #             return deviations
 
 
-def get_multi_parameter_deviations(df, index, player=2):
+def get_multi_parameter_deviations(df, index, player=1):
     """
     the index determines the starting strategy
     this function returns a df with all the strategies which deviate from the index strategy
@@ -174,7 +174,7 @@ def get_multi_parameter_deviations(df, index, player=2):
     epsilon1 = df["epsilon"].loc[index]
     epsilon2 = df["epsilon_deviator"].loc[index]
 
-    if player == 2:
+    if player == 1:
         deviations = (df[((df['alpha'] == alpha1) &
                           (df['alpha_deviator'] != alpha2)) |
                          ((df['gamma'] == gamma1) &
@@ -257,10 +257,10 @@ def check_welfare_optimal_response(df, deviations, index):
 #     return responses
 
 
-def process_deviator(dataframe, index, welfare_optimal=False):
+def process_deviator(dataframe, index, welfare_optimal=False, player=1):
     responses = {}
 
-    deviations = get_multi_parameter_deviations(dataframe, index)
+    deviations = get_multi_parameter_deviations(dataframe, index, player=player)
 
     if welfare_optimal:
         response_index = check_welfare_optimal_response(dataframe, deviations, index)
@@ -301,19 +301,32 @@ def process_deviator(dataframe, index, welfare_optimal=False):
 #     return best_responses
 
 
-def compute_deviator_best_response(df, welfare_optimal=False):
+def compute_deviator_best_response(df, welfare_optimal=False, bothPlayers=False):
 
     best_responses = {}
+    best_responses_alter = {}
 
     for index, strat in tqdm(df.iterrows(), total=len(df)):
         if index not in best_responses.keys():
-            responses = process_deviator(df, index, welfare_optimal=welfare_optimal)
+            responses = process_deviator(df, index, welfare_optimal=welfare_optimal, player=1)
             best_responses.update(responses)
 
-    best_responses = {
-        ind: {
-            'deviator': best_responses[ind],
-        } for ind in best_responses.keys()}
+        if bothPlayers:
+            if index not in best_responses_alter.keys():
+                responses = process_deviator(df, index, welfare_optimal=welfare_optimal, player=2)
+                best_responses_alter.update(responses)
+
+    if bothPlayers:
+        best_responses = {
+            ind: {
+                'deviator': best_responses[ind],
+                'alter': best_responses_alter[ind],
+            } for ind in best_responses.keys()}
+    else:
+        best_responses = {
+            ind: {
+                'deviator': best_responses[ind],
+            } for ind in best_responses.keys()}
 
     return best_responses
 

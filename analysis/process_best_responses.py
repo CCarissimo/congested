@@ -11,16 +11,22 @@ def calculate_metric_changes_after_best_responses(main_df, best_responses, sub_d
 
     results = {}
     for index, row in tqdm(sub_df.iterrows(), total=len(sub_df)):
-        br = best_responses[index]["deviator"]
-        br_parameters = main_df.loc[br][["alpha_deviator", "epsilon_deviator", "gamma_deviator"]].to_dict()
+        br_ego = best_responses[index]["deviator"]
+        br_alter = best_responses[index]["alter"]
+        br_par_ego = main_df.loc[br_ego][["alpha_deviator", "epsilon_deviator", "gamma_deviator"]].to_dict()
+        br_par_alter = main_df.loc[br_alter][["alpha", "epsilon", "gamma"]].to_dict()
 
         # metrics of interest
         results[index] = {
-            "br": br,
-            "isbest": br == index,
-            "deviator_gain": main_df["deviator_average"].loc[br] - main_df["deviator_average"].loc[index],
+            "br": br_ego,
+            "isbest": br_ego == index,
+            "deviator_gain": main_df["deviator_average"].loc[br_ego] - main_df["deviator_average"].loc[index],
+            "br_alter": br_ego,
+            "isbest_alter": br_alter == index,
+            "alter_gain": main_df["non_deviator_average"].loc[br_alter] - main_df["non_deviator_average"].loc[index],
         }
-        results[index].update(br_parameters)
+        results[index].update(br_par_ego)
+        results[index].update(br_par_alter)
 
     results_df = pd.DataFrame.from_dict(results, orient='index')
     final_df = pd.merge(sub_df, results_df, left_index=True, right_index=True)
